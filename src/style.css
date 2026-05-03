@@ -1,0 +1,96 @@
+/* TODOS los @import van primero, sin excepción */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=Inter+Tight:wght@400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+/* Tipografía: Display "Space Mono" (técnico, mono) + body "Inter Tight" (limpio)
+   + acento "Bebas Neue" para títulos brutales tipo evangelion */
+
+:root {
+  --eva-purple: #5B2A86;
+  --eva-purple-deep: #2D1B4E;
+  --eva-green: #A8FF60;
+  --eva-green-glow: rgba(168, 255, 96, 0.55);
+  --eva-orange: #FF6B1A;
+  --eva-orange-glow: rgba(255, 107, 26, 0.5);
+  --eva-black: #050507;
+  --eva-charcoal: #0E0A18;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--eva-black);
+  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Display font para títulos grandes — Bebas Neue tiene esa energía
+   japonesa-industrial perfecta para EVA */
+.font-display {
+  font-family: 'Bebas Neue', 'Inter Tight', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* Mono para etiquetas técnicas tipo NERV/NGE */
+.font-mono-tech {
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 0.05em;
+}
+
+/* Glow utilities para verde y naranja EVA */
+.eva-glow-green {
+  text-shadow: 0 0 20px var(--eva-green-glow);
+}
+
+.eva-glow-orange {
+  text-shadow: 0 0 20px var(--eva-orange-glow);
+}
+
+/* Grid de fondo tipo HUD evangelion (sutil) */
+.eva-grid-bg {
+  background-image:
+    linear-gradient(rgba(168, 255, 96, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168, 255, 96, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Scanline animado, opcional (lo uso en el video destacado) */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.eva-scanline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--eva-green), transparent);
+  opacity: 0.4;
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+}
+
+/* Pulso suave para indicadores activos */
+@keyframes eva-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.eva-pulse {
+  animation: eva-pulse 2s ease-in-out infinite;
+}
+
+/* Selección de texto en verde EVA */
+::selection {
+  background: var(--eva-green);
+  color: var(--eva-black);
+}
