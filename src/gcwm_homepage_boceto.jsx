@@ -9,6 +9,7 @@ import {
   Instagram,
   Link2,
   Mail,
+  Menu,
   MessageCircle,
   PlayCircle,
   Search,
@@ -28,6 +29,7 @@ import { professionals } from "./data/professionals";
 // Configuración del negocio
 // ───────────────────────────────────────────────────────
 const WHATSAPP_NUMBER = "5491153290690";
+const BASE_URL = import.meta.env.BASE_URL;
 
 // URL del Google Apps Script (te la genera Google al publicar el script).
 // Mientras esté vacía, el modal igual funciona pero los datos solo se guardan
@@ -182,7 +184,7 @@ function SubscriptionModal() {
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative p-6 md:p-8">
+        <div className="relative p-4 md:p-8">
           {/* Grid HUD de fondo */}
           <div className="absolute inset-0 eva-grid-bg opacity-30" />
 
@@ -452,6 +454,7 @@ function DisciplinesMenu({ openCategory, isCategoryActive }) {
 // ═══════════════════════════════════════════════════════
 function Header({ page, setPage, openCategory, cartCount }) {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     function onScroll() {
@@ -461,6 +464,8 @@ function Header({ page, setPage, openCategory, cartCount }) {
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => { setMobileOpen(false); }, [page]);
 
   const navButton = (targetPage, label) => (
     <button
@@ -477,76 +482,178 @@ function Header({ page, setPage, openCategory, cartCount }) {
     </button>
   );
 
-  return (
-    <header
-      className={cn(
-        "sticky top-0 z-40",
-        // Solo animamos colores/opacidad — NO altura ni padding,
-        // porque cambiar la altura mientras se scrollea causa "rebote"
-        // y trabazón. El header mantiene siempre el mismo tamaño.
-        "transition-colors duration-300",
-        scrolled
-          ? "border-b border-[var(--eva-green)]/15 bg-black/85 shadow-[0_4px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl"
-          : "border-b border-white/5 bg-black/40 backdrop-blur-md"
-      )}
-    >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 md:px-8">
-        <button
-          type="button"
-          onClick={() => setPage("home")}
-          className="flex items-center gap-3 transition-opacity hover:opacity-80"
-        >
-          <img
-            src="/logo-gcwm.png"
-            alt="GCWM"
-            className="h-11 w-auto object-contain md:h-12"
-          />
-          <div className="hidden flex-col leading-none md:flex">
-            <span className="font-display text-lg text-white">GCWM</span>
-            <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-[var(--eva-green)]">
-              ▸ unit_01 active
-            </span>
-          </div>
-        </button>
+  function handleMobileCategory(categoryId) {
+    setMobileOpen(false);
+    openCategory(categoryId);
+  }
 
-        <nav className="hidden items-center gap-8 md:flex">
-          {navButton("home", "Inicio")}
-          <DisciplinesMenu openCategory={openCategory} isCategoryActive={page === "category"} />
-          {navButton("shop", "Tienda")}
-          {navButton("professionals", "Profesionales")}
+  return (
+    <>
+      <header
+        className={cn(
+          "sticky top-0 z-40",
+          // Solo animamos colores/opacidad — NO altura ni padding,
+          // porque cambiar la altura mientras se scrollea causa "rebote"
+          // y trabazón. El header mantiene siempre el mismo tamaño.
+          "transition-colors duration-300",
+          scrolled
+            ? "border-b border-[var(--eva-green)]/15 bg-black/85 shadow-[0_4px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+            : "border-b border-white/5 bg-black/40 backdrop-blur-md"
+        )}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 md:px-8">
           <button
             type="button"
             onClick={() => setPage("home")}
-            className="font-mono-tech text-xs uppercase tracking-[0.2em] text-slate-400 transition-colors hover:text-[var(--eva-green)]"
+            className="flex items-center gap-3 transition-opacity hover:opacity-80"
           >
-            Comunidad
-          </button>
-        </nav>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setPage("shop")}
-            className="relative rounded-lg border border-white/10 bg-black/40 p-2.5 transition-colors hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/5"
-            aria-label="Abrir carrito"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {cartCount > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-[var(--eva-orange)] text-[10px] font-black text-black shadow-[0_0_12px_var(--eva-orange-glow)]">
-                {cartCount}
+            <img
+              src={`${BASE_URL}logo-gcwm.png`}
+              alt="GCWM"
+              className="h-11 w-auto object-contain md:h-12"
+            />
+            <div className="hidden flex-col leading-none md:flex">
+              <span className="font-display text-lg text-white">GCWM</span>
+              <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-[var(--eva-green)]">
+                ▸ unit_01 active
               </span>
-            )}
+            </div>
           </button>
 
-          <button
-            type="button"
-            className="hidden rounded-lg border border-[var(--eva-green)]/40 bg-[var(--eva-green)]/10 px-4 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] text-[var(--eva-green)] transition-colors hover:bg-[var(--eva-green)]/20 md:block"
-          >
-            Sync ▸
-          </button>
+          <nav className="hidden items-center gap-8 md:flex">
+            {navButton("home", "Inicio")}
+            <DisciplinesMenu openCategory={openCategory} isCategoryActive={page === "category"} />
+            {navButton("shop", "Tienda")}
+            {navButton("professionals", "Profesionales")}
+            <button
+              type="button"
+              onClick={() => setPage("home")}
+              className="font-mono-tech text-xs uppercase tracking-[0.2em] text-slate-400 transition-colors hover:text-[var(--eva-green)]"
+            >
+              Comunidad
+            </button>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setPage("shop")}
+              className="relative rounded-lg border border-white/10 bg-black/40 p-2.5 transition-colors hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/5"
+              aria-label="Abrir carrito"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              {cartCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-[var(--eva-orange)] text-[10px] font-black text-black shadow-[0_0_12px_var(--eva-orange-glow)]">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="hidden rounded-lg border border-[var(--eva-green)]/40 bg-[var(--eva-green)]/10 px-4 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] text-[var(--eva-green)] transition-colors hover:bg-[var(--eva-green)]/20 md:block"
+            >
+              Sync ▸
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileOpen((v) => !v)}
+              className="rounded-lg border border-white/10 bg-black/40 p-2.5 transition-colors hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/5 md:hidden"
+              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+            >
+              {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Menú móvil */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[45] md:hidden">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          <nav className="absolute right-0 top-0 flex h-full w-72 flex-col border-l border-[var(--eva-green)]/20 bg-[var(--eva-charcoal)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+              <span className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">
+                ▸ navegación
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="grid h-8 w-8 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:text-white"
+                aria-label="Cerrar menú"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 space-y-1 overflow-y-auto p-4">
+              <button
+                type="button"
+                onClick={() => setPage("home")}
+                className={cn(
+                  "flex w-full items-center rounded-sm px-4 py-3 font-mono-tech text-xs uppercase tracking-[0.2em] transition",
+                  page === "home"
+                    ? "bg-[var(--eva-green)]/10 text-[var(--eva-green)]"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                Inicio
+              </button>
+
+              <div>
+                <p className="px-4 py-2 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-600">
+                  Disciplinas
+                </p>
+                {categories.map((cat) => {
+                  const CatIcon = cat.icon;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => handleMobileCategory(cat.id)}
+                      className="flex w-full items-center gap-3 rounded-sm px-4 py-3 text-slate-400 transition hover:bg-white/5 hover:text-white"
+                    >
+                      <CatIcon className={cn("h-4 w-4", cat.text)} />
+                      <span className="font-mono-tech text-xs uppercase tracking-[0.2em]">{cat.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPage("shop")}
+                className={cn(
+                  "flex w-full items-center rounded-sm px-4 py-3 font-mono-tech text-xs uppercase tracking-[0.2em] transition",
+                  page === "shop"
+                    ? "bg-[var(--eva-green)]/10 text-[var(--eva-green)]"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                Tienda
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPage("professionals")}
+                className={cn(
+                  "flex w-full items-center rounded-sm px-4 py-3 font-mono-tech text-xs uppercase tracking-[0.2em] transition",
+                  page === "professionals"
+                    ? "bg-[var(--eva-green)]/10 text-[var(--eva-green)]"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                Profesionales
+              </button>
+            </div>
+          </nav>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -578,7 +685,7 @@ function CourseCard({ tutorial }) {
           <span className="text-slate-700">/</span>
           <span>{tutorial.duration}</span>
         </div>
-        <h3 className="min-h-[3.5rem] font-display text-xl leading-tight text-white">{tutorial.title}</h3>
+        <h3 className="line-clamp-3 min-h-[3.5rem] font-display text-xl leading-tight text-white">{tutorial.title}</h3>
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/5 pt-4">
           <span className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-400">{tutorial.level}</span>
           <span className="font-mono-tech text-[10px] font-bold text-[var(--eva-orange)]">★ {tutorial.rating}</span>
@@ -605,7 +712,7 @@ function HomePage({ setPage, openCategory }) {
               </span>
             </div>
 
-            <h1 className="font-display text-6xl leading-[0.9] tracking-tight text-white md:text-8xl">
+            <h1 className="font-display text-4xl leading-[0.9] tracking-tight text-white sm:text-6xl md:text-8xl">
               Forjá tu <br />
               <span className="text-[var(--eva-green)] eva-glow-green">alter ego.</span>
             </h1>
@@ -740,7 +847,7 @@ function HomePage({ setPage, openCategory }) {
                 style={{ '--accent': category.accent }}
               >
                 <div
-                  className="absolute inset-0 rounded-sm opacity-0 transition group-hover:opacity-100"
+                  className="absolute inset-0 rounded-sm opacity-100 transition md:opacity-0 md:group-hover:opacity-100"
                   style={{ boxShadow: `inset 0 0 0 1px ${category.accent}` }}
                 />
 
@@ -837,7 +944,7 @@ function CategoryPage({ activeCategoryId, setPage, openCategory }) {
                 ▸ {category.shortLabel}
               </span>
             </div>
-            <h1 className="font-display text-6xl leading-none tracking-tight drop-shadow-[0_0_20px_rgba(0,0,0,0.6)] md:text-8xl">
+            <h1 className="font-display text-4xl leading-none tracking-tight drop-shadow-[0_0_20px_rgba(0,0,0,0.6)] sm:text-6xl md:text-8xl">
               {category.label}
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-7 text-white/90 md:text-lg">{category.longDescription}</p>
@@ -1020,7 +1127,7 @@ function ShopPage({ cart, setCart }) {
               ▸ shop_terminal
             </span>
           </div>
-          <h1 className="font-display text-6xl tracking-tight text-white md:text-8xl">
+          <h1 className="font-display text-4xl tracking-tight text-white sm:text-6xl md:text-8xl">
             Equipamiento <br />
             <span className="text-[var(--eva-orange)] eva-glow-orange">de combate.</span>
           </h1>
@@ -1300,7 +1407,7 @@ function Lightbox({ images, startIndex, onClose }) {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); go(-1); }}
-            className="absolute left-5 top-1/2 z-10 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-sm border border-white/10 bg-black/70 text-white transition hover:border-[var(--eva-green)]/50 hover:bg-black/90 hover:text-[var(--eva-green)]"
+            className="absolute left-2 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-sm border border-white/10 bg-black/70 text-white transition hover:border-[var(--eva-green)]/50 hover:bg-black/90 hover:text-[var(--eva-green)] md:left-5 md:h-12 md:w-12"
             aria-label="Foto anterior"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -1308,7 +1415,7 @@ function Lightbox({ images, startIndex, onClose }) {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); go(1); }}
-            className="absolute right-5 top-1/2 z-10 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-sm border border-white/10 bg-black/70 text-white transition hover:border-[var(--eva-green)]/50 hover:bg-black/90 hover:text-[var(--eva-green)]"
+            className="absolute right-2 top-1/2 z-10 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-sm border border-white/10 bg-black/70 text-white transition hover:border-[var(--eva-green)]/50 hover:bg-black/90 hover:text-[var(--eva-green)] md:right-5 md:h-12 md:w-12"
             aria-label="Foto siguiente"
           >
             <ChevronRight className="h-6 w-6" />
@@ -1503,7 +1610,7 @@ function Carousel({ images, fallback }) {
           <button
             type="button"
             onClick={(e) => go(-1, e)}
-            className="absolute left-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-sm border border-white/20 bg-black/50 text-white opacity-0 transition group-hover:opacity-100 hover:border-[var(--eva-green)]/60 hover:bg-black/80 hover:text-[var(--eva-green)]"
+            className="absolute left-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-sm border border-white/20 bg-black/50 text-white opacity-100 transition md:opacity-0 md:group-hover:opacity-100 hover:border-[var(--eva-green)]/60 hover:bg-black/80 hover:text-[var(--eva-green)]"
             aria-label="Foto anterior"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -1511,7 +1618,7 @@ function Carousel({ images, fallback }) {
           <button
             type="button"
             onClick={(e) => go(1, e)}
-            className="absolute right-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-sm border border-white/20 bg-black/50 text-white opacity-0 transition group-hover:opacity-100 hover:border-[var(--eva-green)]/60 hover:bg-black/80 hover:text-[var(--eva-green)]"
+            className="absolute right-2 top-1/2 z-10 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-sm border border-white/20 bg-black/50 text-white opacity-100 transition md:opacity-0 md:group-hover:opacity-100 hover:border-[var(--eva-green)]/60 hover:bg-black/80 hover:text-[var(--eva-green)]"
             aria-label="Foto siguiente"
           >
             <ChevronRight className="h-4 w-4" />
@@ -1682,7 +1789,7 @@ function ProfessionalsPage() {
               ▸ pilot_registry
             </span>
           </div>
-          <h1 className="font-display text-6xl tracking-tight text-white md:text-8xl">
+          <h1 className="font-display text-4xl tracking-tight text-white sm:text-6xl md:text-8xl">
             Pilotos <br />
             <span className="text-[var(--eva-green)] eva-glow-green">certificados.</span>
           </h1>
