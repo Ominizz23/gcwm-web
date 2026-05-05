@@ -16,9 +16,11 @@
   --eva-charcoal: #0E0A18;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* NOTA: scroll-behavior: smooth removido a propósito.
+   Causaba conflicto con window.scrollTo({behavior:"smooth"}) del JS,
+   provocando que al hacer scroll rápido entre arriba/abajo
+   el navegador "rebotara" en posiciones intermedias.
+   El scroll de la rueda del mouse ahora es instantáneo (esperado). */
 
 body {
   margin: 0;
