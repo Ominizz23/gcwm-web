@@ -1713,57 +1713,58 @@ function ProfessionalCard({ pro, index, onOpenGallery }) {
       {/* Info */}
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-center gap-2">
-          <Icon className={cn("h-3.5 w-3.5", category.text)} />
-          <p className={cn("font-mono-tech text-[10px] uppercase tracking-[0.25em]", category.text)}>
+          <Icon className={cn("h-3.5 w-3.5 shrink-0", category.text)} />
+          <p className={cn("min-w-0 truncate font-mono-tech text-[10px] uppercase tracking-[0.25em]", category.text)}>
             {pro.role}
           </p>
         </div>
 
-        <h3 className="mt-2 font-display text-2xl leading-tight text-white">{pro.name}</h3>
+        <h3 className="mt-2 line-clamp-2 font-display text-2xl leading-tight text-white">{pro.name}</h3>
 
-        <p className="mt-3 flex-1 text-xs leading-5 text-slate-400">{pro.bio}</p>
+        <p className="mt-3 line-clamp-4 text-xs leading-5 text-slate-400">{pro.bio}</p>
 
-        {/* Socials */}
-        <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/5 pt-4">
-          <span className="font-mono-tech text-[9px] uppercase tracking-[0.25em] text-slate-600">
-            ▸ contact
-          </span>
-          <div className="flex items-center gap-2">
-            {pro.socials?.instagram && (
-              <a
-                href={pro.socials.instagram}
-                target="_blank"
-                rel="noreferrer"
-                className="grid h-8 w-8 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/10 hover:text-[var(--eva-green)]"
-                aria-label={`Instagram de ${pro.name}`}
-              >
-                <Instagram className="h-3.5 w-3.5" />
-              </a>
-            )}
-            {pro.socials?.linktree && (
-              <a
-                href={pro.socials.linktree}
-                target="_blank"
-                rel="noreferrer"
-                className="grid h-8 w-8 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/10 hover:text-[var(--eva-green)]"
-                aria-label={`Linktree de ${pro.name}`}
-              >
-                <Link2 className="h-3.5 w-3.5" />
-              </a>
-            )}
+        {/* Socials + botón — siempre anclados al fondo */}
+        <div className="mt-auto">
+          <div className="mt-5 flex items-center justify-between gap-2 border-t border-white/5 pt-4">
+            <span className="font-mono-tech text-[9px] uppercase tracking-[0.25em] text-slate-600">
+              ▸ contact
+            </span>
+            <div className="flex items-center gap-2">
+              {pro.socials?.instagram && (
+                <a
+                  href={pro.socials.instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="grid h-8 w-8 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/10 hover:text-[var(--eva-green)]"
+                  aria-label={`Instagram de ${pro.name}`}
+                >
+                  <Instagram className="h-3.5 w-3.5" />
+                </a>
+              )}
+              {pro.socials?.linktree && (
+                <a
+                  href={pro.socials.linktree}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="grid h-8 w-8 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/10 hover:text-[var(--eva-green)]"
+                  aria-label={`Linktree de ${pro.name}`}
+                >
+                  <Link2 className="h-3.5 w-3.5" />
+                </a>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Botón ancho de Galería */}
-        <button
-          type="button"
-          onClick={() => onOpenGallery(pro)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-sm border border-[var(--eva-green)]/30 bg-[var(--eva-green)]/5 px-4 py-2.5 font-mono-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--eva-green)] transition hover:bg-[var(--eva-green)]/15 hover:shadow-[0_0_20px_rgba(168,255,96,0.15)]"
-          aria-label={`Ver galería de ${pro.name}`}
-        >
-          <Images className="h-3.5 w-3.5" />
-          Ver galería
-        </button>
+          <button
+            type="button"
+            onClick={() => onOpenGallery(pro)}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-sm border border-[var(--eva-green)]/30 bg-[var(--eva-green)]/5 px-4 py-2.5 font-mono-tech text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--eva-green)] transition hover:bg-[var(--eva-green)]/15 hover:shadow-[0_0_20px_rgba(168,255,96,0.15)]"
+            aria-label={`Ver galería de ${pro.name}`}
+          >
+            <Images className="h-3.5 w-3.5" />
+            Ver galería
+          </button>
+        </div>
       </div>
     </motion.article>
   );
