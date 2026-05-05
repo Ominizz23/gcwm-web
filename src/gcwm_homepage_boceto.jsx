@@ -1155,14 +1155,17 @@ function ShopPage({ cart, setCart }) {
               type="button"
               onClick={() => setSector("todos")}
               className={cn(
-                "flex w-full items-center justify-between rounded-sm border px-4 py-3 text-left font-mono-tech text-xs uppercase tracking-wider transition",
+                "flex w-full items-center gap-3 rounded-sm border px-4 py-3 text-left transition",
                 sector === "todos"
                   ? "border-[var(--eva-green)]/40 bg-[var(--eva-green)]/5 text-[var(--eva-green)]"
                   : "border-white/5 bg-black/40 text-slate-400 hover:border-white/20"
               )}
             >
-              Todos
-              <span>{shopItems.length}</span>
+              <div className="flex-1">
+                <p className="text-sm font-bold text-white">Todos</p>
+                <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">sectores</p>
+              </div>
+              <span className="font-mono-tech text-xs text-slate-400">{shopItems.length}</span>
             </button>
             {categories.map((cat) => {
               const Icon = cat.icon;
@@ -1228,15 +1231,15 @@ function ShopPage({ cart, setCart }) {
                     </div>
                   </div>
                   <p className={cn("font-mono-tech text-[10px] uppercase tracking-[0.2em]", cat.text)}>{item.sector}</p>
-                  <h3 className="mt-2 text-base font-bold leading-tight text-white">{item.name}</h3>
+                  <h3 className="mt-2 line-clamp-2 min-h-[2.5rem] text-base font-bold leading-tight text-white">{item.name}</h3>
                   <p className="mt-2 flex-1 text-xs leading-5 text-slate-500">{item.description}</p>
 
                   <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/5 pt-4">
-                    <span className="font-display text-xl text-[var(--eva-green)]">{formatPrice(item.price)}</span>
+                    <span className="whitespace-nowrap font-display text-xl text-[var(--eva-green)]">{formatPrice(item.price)}</span>
                     <button
                       type="button"
                       onClick={() => addToCart(item.id)}
-                      className="rounded-sm bg-[var(--eva-green)] px-3 py-2 font-mono-tech text-[10px] font-bold uppercase tracking-wider text-black transition hover:bg-white"
+                      className="shrink-0 rounded-sm bg-[var(--eva-green)] px-3 py-2 font-mono-tech text-[10px] font-bold uppercase tracking-wider text-black transition hover:bg-white"
                     >
                       Agregar +
                     </button>
