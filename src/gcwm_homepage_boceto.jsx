@@ -664,7 +664,7 @@ function CourseCard({ tutorial }) {
   const category = getCategory(tutorial.category);
   const hasVideo = Boolean(tutorial.youtubeId);
   return (
-    <article className="group overflow-hidden rounded-xl border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)] to-black transition hover:border-[var(--eva-green)]/30 hover:shadow-[0_0_30px_rgba(168,255,96,0.1)]">
+    <article className="group flex flex-col overflow-hidden rounded-xl border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)] to-black transition hover:border-[var(--eva-green)]/30 hover:shadow-[0_0_30px_rgba(168,255,96,0.1)]">
       <div className={cn("relative aspect-video overflow-hidden bg-gradient-to-br p-4", category.color)}>
         <div className="absolute inset-0 eva-grid-bg opacity-40" />
         <div className="relative flex h-full flex-col justify-between">
@@ -679,14 +679,14 @@ function CourseCard({ tutorial }) {
           <PlayCircle className={cn("h-12 w-12 drop-shadow-lg transition", hasVideo ? "text-white group-hover:scale-110" : "text-white/40")} />
         </div>
       </div>
-      <div className="p-5">
+      <div className="flex flex-1 flex-col p-5">
         <div className="mb-3 flex items-center gap-2 font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">
           <span>{category.label}</span>
           <span className="text-slate-700">/</span>
           <span>{tutorial.duration}</span>
         </div>
         <h3 className="line-clamp-3 min-h-[3.5rem] font-display text-xl leading-tight text-white">{tutorial.title}</h3>
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/5 pt-4">
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/5 pt-4">
           <span className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-400">{tutorial.level}</span>
           <span className="font-mono-tech text-[10px] font-bold text-[var(--eva-orange)]">★ {tutorial.rating}</span>
         </div>
@@ -843,7 +843,7 @@ function HomePage({ setPage, openCategory }) {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.08 }}
                 onClick={() => openCategory(category.id)}
-                className="group relative overflow-hidden rounded-sm border border-white/10 bg-gradient-to-b from-[var(--eva-charcoal)] to-black p-6 text-left transition hover:-translate-y-1"
+                className="group relative flex flex-col overflow-hidden rounded-sm border border-white/10 bg-gradient-to-b from-[var(--eva-charcoal)] to-black p-6 text-left transition hover:-translate-y-1"
                 style={{ '--accent': category.accent }}
               >
                 <div
@@ -865,7 +865,7 @@ function HomePage({ setPage, openCategory }) {
                 <h3 className="mt-1 font-display text-2xl text-white">{category.label}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-400">{category.description}</p>
 
-                <div className="mt-6 flex items-center gap-2 font-mono-tech text-[11px] uppercase tracking-[0.2em] text-white/60 transition group-hover:text-white">
+                <div className="mt-auto flex items-center gap-2 pt-6 font-mono-tech text-[11px] uppercase tracking-[0.2em] text-white/60 transition group-hover:text-white">
                   Acceder
                   <ChevronRight className="h-3 w-3 transition group-hover:translate-x-1" />
                 </div>
@@ -1003,9 +1003,9 @@ function CategoryPage({ activeCategoryId, setPage, openCategory }) {
                 isActive ? cn(item.border, item.bg) : "border-white/5 bg-black/40 hover:border-white/20"
               )}
             >
-              <ItemIcon className={cn("mb-2 h-5 w-5", isActive ? item.text : "text-slate-500")} />
-              <p className="font-display text-lg text-white">{item.label}</p>
-              <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{item.shortLabel}</p>
+              <ItemIcon className={cn("mb-2 h-5 w-5 shrink-0", isActive ? item.text : "text-slate-500")} />
+              <p className="line-clamp-1 font-display text-lg text-white">{item.label}</p>
+              <p className="truncate font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{item.shortLabel}</p>
             </button>
           );
         })}
@@ -1033,11 +1033,11 @@ function CategoryPage({ activeCategoryId, setPage, openCategory }) {
                   onClick={() => setPage("shop")}
                   className="flex w-full items-center justify-between gap-3 rounded-sm border border-white/5 bg-black/40 p-3 text-left transition hover:border-white/20 hover:bg-black/60"
                 >
-                  <div>
-                    <p className="text-sm font-bold text-white">{item.name}</p>
-                    <p className="text-xs text-slate-500">{item.description}</p>
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-sm font-bold text-white">{item.name}</p>
+                    <p className="line-clamp-2 text-xs text-slate-500">{item.description}</p>
                   </div>
-                  <span className="font-mono-tech text-xs font-bold text-[var(--eva-green)]">{formatPrice(item.price)}</span>
+                  <span className="shrink-0 whitespace-nowrap font-mono-tech text-xs font-bold text-[var(--eva-green)]">{formatPrice(item.price)}</span>
                 </button>
               ))}
             </div>
@@ -1048,12 +1048,12 @@ function CategoryPage({ activeCategoryId, setPage, openCategory }) {
             <div className="mt-5 space-y-3">
               {(categoryPros.length ? categoryPros : professionals.slice(0, 2)).map((pro) => (
                 <div key={pro.name} className="flex items-center gap-3 rounded-sm border border-white/5 bg-black/40 p-3">
-                  <div className={cn("grid h-12 w-12 place-items-center rounded-sm bg-gradient-to-br font-display text-lg text-white", category.color)}>
+                  <div className={cn("grid h-12 w-12 shrink-0 place-items-center rounded-sm bg-gradient-to-br font-display text-lg text-white", category.color)}>
                     {pro.name.charAt(0)}
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">{pro.name}</p>
-                    <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{pro.role}</p>
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-sm font-bold text-white">{pro.name}</p>
+                    <p className="truncate font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{pro.role}</p>
                     <p className="font-mono-tech text-[10px] font-bold text-[var(--eva-orange)]">★ {pro.rating}</p>
                   </div>
                 </div>
