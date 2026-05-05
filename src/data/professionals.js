@@ -13,11 +13,13 @@
 //    cantidad. Ejemplo: ["/pros/hana/work-1.jpg", ...]
 //
 // Cuando tengas las fotos:
-// 1. Pegalas en /public/pros/hana-crafts/ (o como prefieras organizar).
-// 2. Completá los arrays con las URLs estilo "/pros/hana-crafts/foto-1.jpg".
+// 1. Pegalas en /public/pros/<id>/ (ej: /public/pros/ryo-props/).
+// 2. Completá los arrays usando: `${base}pros/<id>/foto-1.jpg`
 //
 // Por ahora todos los arrays están vacíos — la app muestra placeholders
 // elegantes que indican "próximamente".
+
+const base = import.meta.env.BASE_URL;
 
 export const professionals = [
   {
@@ -27,12 +29,16 @@ export const professionals = [
     category: "tela",
     bio: "Especialista en moldería y trajes ajustados. Convierte referencias 2D en patrones cómodos y fieles al personaje.",
     image: "",
-    carousel: ["/pros/hana-crafts/featured-1.jpg",
-    "/pros/hana-crafts/featured-2.jpg",
-    "/pros/hana-crafts/featured-3.jpg"],
-    gallery: ["/pros/hana-crafts/work-001.jpg",
-    "/pros/hana-crafts/work-002.jpg",
-    "/pros/hana-crafts/work-003.jpg"],
+    carousel: [
+      `${base}pros/hana-crafts/featured-1.jpg`,
+      `${base}pros/hana-crafts/featured-2.jpg`,
+      `${base}pros/hana-crafts/featured-3.jpg`,
+    ],
+    gallery: [
+      `${base}pros/hana-crafts/work-001.jpg`,
+      `${base}pros/hana-crafts/work-002.jpg`,
+      `${base}pros/hana-crafts/work-003.jpg`,
+    ],
     rating: 5.0,
     socials: {
       instagram: "https://instagram.com/hanacrafts",
