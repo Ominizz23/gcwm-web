@@ -1937,7 +1937,8 @@ function Footer({ setPage }) {
   return (
     <footer className="relative z-10 mt-20 border-t border-white/5">
       <div className="mx-auto max-w-7xl px-5 py-12 md:px-8">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_0.7fr_0.7fr_1fr]">
+        <div className="grid items-start gap-6 md:gap-10 md:grid-cols-[1.4fr_0.7fr_0.7fr_1fr]">
+          {/* Columna brand */}
           <div>
             <p className="font-display text-3xl text-white">GCWM</p>
             <p className="mt-1 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-[var(--eva-green)]">
@@ -1959,24 +1960,28 @@ function Footer({ setPage }) {
             </div>
           </div>
 
-          <div>
-            <p className="mb-4 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ navegación</p>
-            <div className="space-y-2 text-sm">
-              <button type="button" onClick={() => setPage("home")} className="block text-slate-400 hover:text-white">Inicio</button>
-              <button type="button" onClick={() => setPage("shop")} className="block text-slate-400 hover:text-white">Tienda</button>
-              <button type="button" onClick={() => setPage("professionals")} className="block text-slate-400 hover:text-white">Profesionales</button>
+          {/* Nav + Soporte: side-by-side en mobile, columnas separadas en md+ */}
+          <div className="grid grid-cols-2 gap-6 md:contents">
+            <div>
+              <p className="mb-4 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ navegación</p>
+              <div className="space-y-2 text-sm">
+                <button type="button" onClick={() => setPage("home")} className="block text-slate-400 hover:text-white">Inicio</button>
+                <button type="button" onClick={() => setPage("shop")} className="block text-slate-400 hover:text-white">Tienda</button>
+                <button type="button" onClick={() => setPage("professionals")} className="block text-slate-400 hover:text-white">Profesionales</button>
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-4 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ soporte</p>
+              <div className="space-y-2 text-sm text-slate-400">
+                <p>FAQ</p>
+                <p>Contacto</p>
+                <p>Pagos</p>
+              </div>
             </div>
           </div>
 
-          <div>
-            <p className="mb-4 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ soporte</p>
-            <div className="space-y-2 text-sm text-slate-400">
-              <p>FAQ</p>
-              <p>Contacto</p>
-              <p>Pagos</p>
-            </div>
-          </div>
-
+          {/* Newsletter */}
           <div>
             <p className="mb-4 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ newsletter</p>
 
@@ -2003,7 +2008,7 @@ function Footer({ setPage }) {
                   <button
                     type="submit"
                     disabled={newsletterStatus === "sending"}
-                    className="bg-[var(--eva-green)] px-4 font-mono-tech text-xs font-bold text-black hover:bg-white disabled:opacity-50"
+                    className="shrink-0 bg-[var(--eva-green)] px-4 font-mono-tech text-xs font-bold text-black hover:bg-white disabled:opacity-50"
                   >
                     {newsletterStatus === "sending" ? "..." : "▸"}
                   </button>
@@ -2020,7 +2025,7 @@ function Footer({ setPage }) {
 
         <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/5 pt-6 md:flex-row">
           <p className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-600">
-            © 2024 gcwm ▸ all systems operational
+            © 2026 gcwm ▸ all systems operational
           </p>
           <p className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-600">
             unit_01 ▸ buenos aires, ar
