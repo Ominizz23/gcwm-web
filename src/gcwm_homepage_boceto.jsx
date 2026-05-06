@@ -1036,9 +1036,10 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
             <button
               type="button"
               onClick={() => setSyncOpen(true)}
-              className="hidden rounded-lg border border-[var(--eva-green)]/40 bg-[var(--eva-green)]/10 px-4 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] text-[var(--eva-green)] transition-colors hover:bg-[var(--eva-green)]/20 md:block"
+              className="flex items-center gap-2 rounded-lg border border-[var(--eva-green)]/40 bg-[var(--eva-green)]/10 px-2.5 py-2.5 font-mono-tech text-xs uppercase tracking-[0.15em] text-[var(--eva-green)] transition-colors hover:bg-[var(--eva-green)]/20 md:px-4 md:py-2"
             >
-              Sync ▸
+              <Sparkles className="h-4 w-4 md:hidden" />
+              <span className="hidden md:inline">Sync ▸</span>
             </button>
 
             <button
