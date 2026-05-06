@@ -1563,6 +1563,8 @@ function GalleryModal({ pro, onClose }) {
 function Carousel({ images, fallback }) {
   const [index, setIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
+  // Rastrea qué índices ya fueron cargados para no re-descargar al volver atrás
+  const [loaded, setLoaded] = useState(() => new Set([0]));
 
   // Auto-rotación solo al hacer hover
   useEffect(() => {
@@ -1572,6 +1574,16 @@ function Carousel({ images, fallback }) {
     }, 3000);
     return () => clearInterval(interval);
   }, [isHovering, images.length]);
+
+  // Al cambiar de foto, marcar la actual y la siguiente como "a cargar"
+  useEffect(() => {
+    setLoaded((prev) => {
+      const next = new Set(prev);
+      next.add(index);
+      next.add((index + 1) % images.length);
+      return next;
+    });
+  }, [index, images.length]);
 
   // Si no hay imágenes, devuelve el fallback (placeholder)
   if (!images || images.length === 0) {
@@ -1594,11 +1606,11 @@ function Carousel({ images, fallback }) {
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      {/* Foto actual con transición */}
+      {/* Solo se asigna src a imágenes ya "desbloqueadas" — el resto no se descarga */}
       {images.map((src, i) => (
         <img
-          key={src + i}
-          src={src}
+          key={i}
+          src={loaded.has(i) ? src : undefined}
           alt={`Foto ${i + 1}`}
           className={cn(
             "absolute inset-0 h-full w-full object-cover transition-opacity duration-500",
