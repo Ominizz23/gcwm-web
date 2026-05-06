@@ -452,7 +452,7 @@ function DisciplinesMenu({ openCategory, isCategoryActive }) {
 // ═══════════════════════════════════════════════════════
 // HEADER — sticky + compacto al hacer scroll
 // ═══════════════════════════════════════════════════════
-function Header({ page, setPage, openCategory, cartCount }) {
+function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -537,7 +537,7 @@ function Header({ page, setPage, openCategory, cartCount }) {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setPage("shop")}
+              onClick={onOpenCart}
               className="relative rounded-lg border border-white/10 bg-black/40 p-2.5 transition-colors hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/5"
               aria-label="Abrir carrito"
             >
@@ -1922,11 +1922,462 @@ function ProfessionalsPage() {
 }
 
 // ═══════════════════════════════════════════════════════
+// CART MODAL — resumen del pedido con doble confirmación
+// ═══════════════════════════════════════════════════════
+function CartModal({ cart, setCart, onClose }) {
+  const [confirming, setConfirming] = useState(false);
+
+  const cartLines = useMemo(() => {
+    return Object.entries(cart)
+      .map(([id, qty]) => {
+        const product = shopItems.find((item) => item.id === id);
+        return product ? { ...product, qty } : null;
+      })
+      .filter(Boolean);
+  }, [cart]);
+
+  const total = cartLines.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const itemCount = cartLines.reduce((sum, item) => sum + item.qty, 0);
+
+  const upsellItems = useMemo(() => {
+    const inCart = new Set(Object.keys(cart));
+    const candidates = shopItems.filter((item) => !inCart.has(item.id));
+    return [...candidates].sort(() => Math.random() - 0.5).slice(0, 3);
+  }, [cart]);
+
+  const lineBreak = String.fromCharCode(10);
+  const whatsappMessage = encodeURIComponent(
+    [
+      "Hola! Quiero hacer este pedido en GCWM:",
+      "",
+      ...cartLines.map((item) => `- ${item.qty} x ${item.name} (${formatPrice(item.price)})`),
+      "",
+      `Total estimado: ${formatPrice(total)}`,
+      "",
+      "Me confirmas stock y envio?",
+    ].join(lineBreak)
+  );
+
+  function addToCart(productId) {
+    setCart((current) => ({ ...current, [productId]: (current[productId] || 0) + 1 }));
+  }
+
+  function changeQty(productId, delta) {
+    setCart((current) => {
+      const nextQty = (current[productId] || 0) + delta;
+      const next = { ...current };
+      if (nextQty <= 0) delete next[productId];
+      else next[productId] = nextQty;
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="relative flex w-full max-w-md max-h-[90vh] flex-col overflow-hidden rounded-t-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80 sm:rounded-sm"
+      >
+        {/* Esquinas HUD */}
+        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+          <div>
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ pedido_activo</p>
+            <h2 className="mt-0.5 font-display text-2xl text-white">
+              Carrito{itemCount > 0 && <span className="ml-2 text-[var(--eva-green)]">({itemCount})</span>}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-white/30 hover:text-white"
+            aria-label="Cerrar carrito"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Contenido scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-5">
+            {cartLines.length === 0 ? (
+              <div className="rounded-sm border border-dashed border-white/10 bg-black/40 p-8 text-center">
+                <ShoppingBag className="mx-auto mb-3 h-8 w-8 text-slate-600" />
+                <p className="font-display text-lg text-white">Carrito vacío</p>
+                <p className="mt-1 font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">
+                  agregá items para empezar
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {cartLines.map((item) => (
+                  <div key={item.id} className="rounded-sm border border-white/5 bg-black/40 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white">{item.name}</p>
+                        <p className="font-mono-tech text-[10px] text-slate-500">{formatPrice(item.price)} c/u</p>
+                      </div>
+                      <p className="shrink-0 font-mono-tech text-xs font-bold text-[var(--eva-green)]">
+                        {formatPrice(item.price * item.qty)}
+                      </p>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => changeQty(item.id, -1)}
+                          className="grid h-7 w-7 place-items-center rounded-sm border border-white/10 bg-black/60 font-bold text-white hover:border-white/30"
+                        >
+                          −
+                        </button>
+                        <span className="w-6 text-center font-mono-tech text-xs text-white">{item.qty}</span>
+                        <button
+                          type="button"
+                          onClick={() => changeQty(item.id, 1)}
+                          className="grid h-7 w-7 place-items-center rounded-sm border border-white/10 bg-black/60 font-bold text-white hover:border-white/30"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => changeQty(item.id, -item.qty)}
+                        className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500 hover:text-[var(--eva-orange)]"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Upsell */}
+          {upsellItems.length > 0 && (
+            <div className="border-t border-white/5 px-5 py-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-[var(--eva-orange)]" />
+                <p className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-orange)]">
+                  No termines sin agregar esto
+                </p>
+              </div>
+              <div className="space-y-2">
+                {upsellItems.map((item) => {
+                  const cat = getCategory(item.category);
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 rounded-sm border border-white/5 bg-black/40 p-3"
+                    >
+                      <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-sm bg-gradient-to-br", cat.color)}>
+                        <ShoppingBag className="h-4 w-4 text-white/70" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-1 text-xs font-bold text-white">{item.name}</p>
+                        <p className="font-mono-tech text-[10px] text-[var(--eva-green)]">{formatPrice(item.price)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addToCart(item.id)}
+                        className="shrink-0 rounded-sm border border-[var(--eva-green)]/40 bg-[var(--eva-green)]/10 px-2.5 py-1.5 font-mono-tech text-[10px] font-bold text-[var(--eva-green)] transition hover:bg-[var(--eva-green)] hover:text-black"
+                      >
+                        + Agregar
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer del modal */}
+        {cartLines.length > 0 && (
+          <div className="border-t border-white/10 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">
+                total estimado
+              </span>
+              <span className="font-display text-2xl text-[var(--eva-green)] eva-glow-green">
+                {formatPrice(total)}
+              </span>
+            </div>
+
+            {confirming ? (
+              <div className="overflow-hidden rounded-sm border border-[var(--eva-orange)]/40 bg-[var(--eva-orange)]/5">
+                <div className="border-b border-[var(--eva-orange)]/20 px-4 py-3">
+                  <p className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-orange)]">
+                    ▸ confirmar pedido
+                  </p>
+                  <p className="mt-1 text-sm leading-5 text-slate-300">
+                    Se abrirá WhatsApp con tu pedido de{" "}
+                    <span className="font-bold text-[var(--eva-green)]">{formatPrice(total)}</span>.
+                    Coordinamos stock, pago y envío.
+                  </p>
+                </div>
+                <div className="flex gap-2 p-3">
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(false)}
+                    className="flex-1 rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
+                  >
+                    ← Volver
+                  </button>
+                  <a
+                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={onClose}
+                    className="flex flex-[1.5] items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_20px_var(--eva-green-glow)] transition hover:bg-white"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    Sí, confirmar ▸
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] px-4 py-4 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_30px_var(--eva-green-glow)] transition hover:bg-white"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Realizar pedido ▸
+              </button>
+            )}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// FAQ MODAL
+// ═══════════════════════════════════════════════════════
+const FAQ_ITEMS = [
+  {
+    q: "¿Cómo funcionan los cursos?",
+    a: "Los cursos son tutoriales en video. Algunos son gratuitos y otros de pago. Podés verlos a tu ritmo, cuantas veces quieras, desde cualquier dispositivo.",
+  },
+  {
+    q: "¿Cómo compro en la tienda?",
+    a: "Agregá los productos al carrito y hacé click en 'Realizar pedido'. Se abrirá WhatsApp para coordinar stock, forma de pago y envío directamente con nosotros.",
+  },
+  {
+    q: "¿Hacen envíos a todo el país?",
+    a: "Sí, trabajamos con correos nacionales. El costo y tiempo de envío se coordinan al confirmar el pedido por WhatsApp, dependiendo de tu localidad.",
+  },
+  {
+    q: "¿Puedo sumarme al registro de profesionales?",
+    a: "Por supuesto. Si enseñás, fabricás props, hacés wigs, costura o electrónica para cosplay, escribinos por WhatsApp o Instagram y coordinamos tu incorporación.",
+  },
+  {
+    q: "¿Qué métodos de pago aceptan?",
+    a: "Transferencia bancaria, Mercado Pago y efectivo. Todos los detalles se coordinan directamente por WhatsApp al confirmar el pedido.",
+  },
+];
+
+function FAQModal({ onClose }) {
+  const [openIndex, setOpenIndex] = useState(null);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="relative flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80"
+      >
+        {/* Esquinas HUD */}
+        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+
+        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+          <div>
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ soporte</p>
+            <h2 className="mt-0.5 font-display text-2xl text-white">Preguntas frecuentes</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-white/30 hover:text-white"
+            aria-label="Cerrar FAQ"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          <div className="space-y-2">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i} className="overflow-hidden rounded-sm border border-white/5 bg-black/40">
+                <button
+                  type="button"
+                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
+                >
+                  <p className="text-sm font-bold text-white">{item.q}</p>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 shrink-0 text-[var(--eva-green)] transition-transform",
+                      openIndex === i && "rotate-180"
+                    )}
+                  />
+                </button>
+                {openIndex === i && (
+                  <div className="border-t border-white/5 px-4 pb-4 pt-3">
+                    <p className="text-sm leading-6 text-slate-400">{item.a}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// CONTACT MODAL
+// ═══════════════════════════════════════════════════════
+function ContactModal({ onClose }) {
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="relative w-full max-w-sm overflow-hidden rounded-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80"
+      >
+        {/* Esquinas HUD */}
+        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+
+        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+          <div>
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ contact</p>
+            <h2 className="mt-0.5 font-display text-2xl text-white">Contacto</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-white/30 hover:text-white"
+            aria-label="Cerrar contacto"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-3 p-6">
+          <a
+            href={`https://wa.me/${WHATSAPP_NUMBER}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-4 rounded-sm border border-white/5 bg-black/40 px-4 py-4 transition hover:border-[var(--eva-green)]/40 hover:bg-[var(--eva-green)]/5"
+          >
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-sm border border-[var(--eva-green)]/30 bg-[var(--eva-green)]/10">
+              <MessageCircle className="h-5 w-5 text-[var(--eva-green)]" />
+            </div>
+            <div>
+              <p className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-green)]">WhatsApp</p>
+              <p className="mt-0.5 text-sm text-white">Consultas, pedidos y soporte</p>
+            </div>
+          </a>
+
+          <a
+            href="https://instagram.com/gcwm_ar"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-4 rounded-sm border border-white/5 bg-black/40 px-4 py-4 transition hover:border-white/20 hover:bg-black/60"
+          >
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-sm border border-white/10 bg-black/60">
+              <Instagram className="h-5 w-5 text-slate-400" />
+            </div>
+            <div>
+              <p className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-slate-400">Instagram</p>
+              <p className="mt-0.5 text-sm text-white">@gcwm_ar</p>
+            </div>
+          </a>
+
+          <a
+            href="mailto:contacto@gcwm.ar"
+            className="flex items-center gap-4 rounded-sm border border-white/5 bg-black/40 px-4 py-4 transition hover:border-white/20 hover:bg-black/60"
+          >
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-sm border border-white/10 bg-black/60">
+              <Mail className="h-5 w-5 text-slate-400" />
+            </div>
+            <div>
+              <p className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-slate-400">Email</p>
+              <p className="mt-0.5 text-sm text-white">contacto@gcwm.ar</p>
+            </div>
+          </a>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // FOOTER
 // ═══════════════════════════════════════════════════════
 function Footer({ setPage }) {
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [newsletterStatus, setNewsletterStatus] = useState("idle"); // idle | sending | success | error
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
 
   async function handleNewsletter(e) {
     e.preventDefault();
@@ -1947,6 +2398,7 @@ function Footer({ setPage }) {
   }
 
   return (
+    <>
     <footer className="relative z-10 mt-20 border-t border-white/5">
       <div className="mx-auto max-w-7xl px-5 py-12 md:px-8">
         <div className="grid items-start gap-6 md:gap-10 md:grid-cols-[1.4fr_0.7fr_0.7fr_1fr]">
@@ -1985,10 +2437,9 @@ function Footer({ setPage }) {
 
             <div>
               <p className="mb-4 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ soporte</p>
-              <div className="space-y-2 text-sm text-slate-400">
-                <p>FAQ</p>
-                <p>Contacto</p>
-                <p>Pagos</p>
+              <div className="space-y-2 text-sm">
+                <button type="button" onClick={() => setFaqOpen(true)} className="block text-slate-400 transition hover:text-white">FAQ</button>
+                <button type="button" onClick={() => setContactOpen(true)} className="block text-slate-400 transition hover:text-white">Contacto</button>
               </div>
             </div>
           </div>
@@ -2045,15 +2496,34 @@ function Footer({ setPage }) {
         </div>
       </div>
     </footer>
+    {faqOpen && <FAQModal onClose={() => setFaqOpen(false)} />}
+    {contactOpen && <ContactModal onClose={() => setContactOpen(false)} />}
+    </>
   );
 }
 
 // ═══════════════════════════════════════════════════════
 // ROOT
 // ═══════════════════════════════════════════════════════
+function getStateFromHash() {
+  const h = window.location.hash.replace("#", "");
+  if (h.startsWith("category-")) {
+    const catId = h.replace("category-", "");
+    return {
+      page: "category",
+      category: ["pelucas", "electronica", "tela", "props"].includes(catId) ? catId : "pelucas",
+    };
+  }
+  return {
+    page: ["home", "shop", "professionals"].includes(h) ? h : "home",
+    category: "pelucas",
+  };
+}
+
 export default function GCWMHomepageMockup() {
-  const [page, setPage] = useState("home");
-  const [activeCategory, setActiveCategory] = useState("pelucas");
+  const [page, setPage] = useState(() => getStateFromHash().page);
+  const [activeCategory, setActiveCategory] = useState(() => getStateFromHash().category);
+  const [cartOpen, setCartOpen] = useState(false);
 
   // Carrito persistente: lee de localStorage al iniciar
   const [cart, setCart] = useState(() => {
@@ -2074,18 +2544,30 @@ export default function GCWMHomepageMockup() {
     }
   }, [cart]);
 
+  // Sincronizar estado cuando el usuario navega con botones del navegador
+  useEffect(() => {
+    function onHashChange() {
+      const { page: p, category: c } = getStateFromHash();
+      setPage(p);
+      setActiveCategory(c);
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
   const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
 
   function changePage(nextPage) {
     setPage(nextPage);
-    // "auto" en vez de "smooth" para evitar el bug de rebote
-    // que pasaba al cambiar de página rápido
+    window.location.hash = nextPage;
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 
   function openCategory(categoryId) {
     setActiveCategory(categoryId);
     setPage("category");
+    window.location.hash = `category-${categoryId}`;
     window.scrollTo({ top: 0, behavior: "auto" });
   }
 
@@ -2105,6 +2587,7 @@ export default function GCWMHomepageMockup() {
         setPage={changePage}
         openCategory={openCategory}
         cartCount={cartCount}
+        onOpenCart={() => setCartOpen(true)}
       />
       {page === "home" && <HomePage setPage={changePage} openCategory={openCategory} />}
       {page === "shop" && <ShopPage cart={cart} setCart={setCart} />}
@@ -2112,6 +2595,7 @@ export default function GCWMHomepageMockup() {
       {page === "category" && <CategoryPage activeCategoryId={activeCategory} setPage={changePage} openCategory={openCategory} />}
       <Footer setPage={changePage} />
       <SubscriptionModal />
+      {cartOpen && <CartModal cart={cart} setCart={setCart} onClose={() => setCartOpen(false)} />}
     </main>
   );
 }
