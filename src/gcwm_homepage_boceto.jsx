@@ -307,9 +307,109 @@ function SubscriptionModal() {
 }
 
 // ═══════════════════════════════════════════════════════
+// PLATFORM DETECTION — EVA unit assigned by device OS
+// ═══════════════════════════════════════════════════════
+function detectPlatform() {
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPod/.test(ua)) return "ios";
+  if (/iPad/.test(ua)) return "ios";
+  // iPadOS 13+ reports as Macintosh but has touch points
+  if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return "ios";
+  if (/Android/.test(ua)) return "android";
+  return "desktop";
+}
+
+const SYNC_VARIANTS = {
+  // EVA-00 Prototype — Rei Ayanami — iOS/Apple
+  ios: {
+    unit: "00",
+    class: "PROTOTYPE",
+    pilot: "1ST CHILD",
+    pilotName: "REI AYANAMI",
+    accent: "#00CFFF",
+    syncDuration: 3000,
+    plateauEnd: 4200,
+    spikeDuration: 500,
+    bootStatus: "DORMANT",
+    activeStatus: "AWAKENING",
+    lclDisplay: "SOUL INFUSED",
+    logLines: [
+      "MAGI_01 BALTHASAR ........... ONLINE",
+      "DUMMY SYSTEM ................ STANDBY",
+      "SOUL INTEGRATION ............ PARTIAL",
+      "REI INTERFACE ............... ACTIVE",
+      "AWAKENING PROTOCOL: ARMED",
+    ],
+    exceededLog: [
+      "!!! SOUL AWAKENING DETECTED !!!",
+      "!!! DUMMY PLUG: OVERRIDE !!!",
+      "!!! REI: AWAKENED !!!",
+    ],
+    exceededBanner: "⚠ SOUL AWAKENING — PROTOTYPE UNBOUNDED ⚠",
+  },
+  // EVA-02 Production Model — Asuka Langley — Android
+  android: {
+    unit: "02",
+    class: "PRODUCTION",
+    pilot: "2ND CHILD",
+    pilotName: "ASUKA LANGLEY",
+    accent: "#FF2244",
+    syncDuration: 1400,
+    plateauEnd: 2000,
+    spikeDuration: 220,
+    bootStatus: "STANDBY",
+    activeStatus: "KAMPFBEREIT",
+    lclDisplay: "NOMINAL",
+    logLines: [
+      "KAMPFEINHEIT ................ AKTIVIERT",
+      "GERMAN INTERFACE ............ ONLINE",
+      "SYNCHRONISATION ............. BEGINNT",
+      "STOLZ DER MENSCHHEIT ........ AKTIV",
+      "LEISTUNG: NOMINAL",
+    ],
+    exceededLog: [
+      "!!! ICH BIN KEINE PUPPE !!!",
+      "!!! PRIDE OVERFLOW CRITICAL !!!",
+      "!!! ASUKA: ENTFESSELT !!!",
+    ],
+    exceededBanner: "⚠ ICH BIN KEINE PUPPE! — ENTFESSELT ⚠",
+  },
+  // EVA-01 — Shinji Ikari — Desktop
+  desktop: {
+    unit: "01",
+    class: "EVANGELION",
+    pilot: "3RD CHILD",
+    pilotName: "SHINJI IKARI",
+    accent: "#A8FF60",
+    syncDuration: 2200,
+    plateauEnd: 2900,
+    spikeDuration: 400,
+    bootStatus: "STANDBY",
+    activeStatus: "BERSERKER",
+    lclDisplay: "NOMINAL",
+    logLines: [
+      "MAGI_01 BALTHASAR ........... ONLINE",
+      "MAGI_02 MELCHIOR ............ ONLINE",
+      "MAGI_03 CASPER .............. ONLINE",
+      "ENTRY PLUG: PRESSURIZATION OK",
+      "NEURAL INTERFACE: ESTABLISHED",
+    ],
+    exceededLog: [
+      "!!! ABSOLUTE BORDERLINE EXCEEDED !!!",
+      "!!! BERSERKER MODE ACTIVE !!!",
+      "!!! PILOT EJECT: FAILED !!!",
+    ],
+    exceededBanner: "⚠ ABSOLUTE BORDERLINE EXCEEDED ⚠",
+  },
+};
+
+// ═══════════════════════════════════════════════════════
 // SYNC MODAL — animación de sincronización EVA-01
 // ═══════════════════════════════════════════════════════
 function SyncModal({ onClose }) {
+  const platform = useMemo(detectPlatform, []);
+  const variant = SYNC_VARIANTS[platform];
+
   const [syncPct, setSyncPct] = useState(0);
   const [phase, setPhase] = useState("boot"); // boot | syncing | exceeded | complete
   const [log, setLog] = useState([]);
@@ -323,15 +423,7 @@ function SyncModal({ onClose }) {
     activeRef.current = true;
     const timerIds = [];
 
-    const LOG_LINES = [
-      "MAGI_01 BALTHASAR ........... ONLINE",
-      "MAGI_02 MELCHIOR ............ ONLINE",
-      "MAGI_03 CASPER .............. ONLINE",
-      "ENTRY PLUG: PRESSURIZATION OK",
-      "NEURAL INTERFACE: ESTABLISHED",
-    ];
-
-    LOG_LINES.forEach((line, i) => {
+    variant.logLines.forEach((line, i) => {
       timerIds.push(setTimeout(() => {
         setLog((prev) => [line, ...prev].slice(0, 6));
       }, i * 180));
@@ -351,6 +443,7 @@ function SyncModal({ onClose }) {
       clearInterval(barInterval);
       setPhase("syncing");
 
+      const { syncDuration, plateauEnd, spikeDuration } = variant;
       let startTime = null;
 
       function step(timestamp) {
@@ -358,28 +451,26 @@ function SyncModal({ onClose }) {
         if (!startTime) startTime = timestamp;
         const elapsed = timestamp - startTime;
 
-        if (elapsed < 2200) {
-          const t = elapsed / 2200;
+        if (elapsed < syncDuration) {
+          const t = elapsed / syncDuration;
           const eased = 1 - Math.pow(1 - t, 2.5);
           setSyncPct(eased * 71.4);
           rafRef.current = requestAnimationFrame(step);
-        } else if (elapsed < 2900) {
+        } else if (elapsed < plateauEnd) {
           setSyncPct(71.4);
           rafRef.current = requestAnimationFrame(step);
-        } else if (elapsed < 3300) {
-          const t = (elapsed - 2900) / 400;
+        } else if (elapsed < plateauEnd + spikeDuration) {
+          const t = (elapsed - plateauEnd) / spikeDuration;
           setSyncPct(71.4 + Math.pow(t, 0.4) * (400 - 71.4));
           rafRef.current = requestAnimationFrame(step);
         } else {
           setSyncPct(400);
           setBars({ at: 100, neural: 100, bio: 100 });
           setLog(() => [
-            "!!! ABSOLUTE BORDERLINE EXCEEDED !!!",
-            "!!! BERSERKER MODE ACTIVE !!!",
-            "!!! PILOT EJECT: FAILED !!!",
-            LOG_LINES[0],
-            LOG_LINES[1],
-            LOG_LINES[2],
+            ...variant.exceededLog,
+            variant.logLines[0],
+            variant.logLines[1],
+            variant.logLines[2],
           ]);
           setPhase("exceeded");
 
@@ -412,7 +503,7 @@ function SyncModal({ onClose }) {
 
   const isExceeded = phase === "exceeded";
   const isComplete = phase === "complete";
-  const accent = isExceeded ? "#FF6B1A" : "#A8FF60";
+  const accent = isExceeded ? "#FF6B1A" : variant.accent;
 
   const displayPct = syncPct >= 400 ? "400.0" : syncPct.toFixed(1);
   const elapsedSec = Math.floor((syncPct / 400) * 300);
@@ -492,13 +583,13 @@ function SyncModal({ onClose }) {
             <div className="rounded-sm border border-white/10 bg-black/70 p-4 backdrop-blur">
               <p className="mb-3 font-mono-tech text-[8px] uppercase tracking-[0.4em]" style={{ color: accent }}>▸ unit_registry</p>
               <p className="font-display text-4xl leading-none text-white">UNIT</p>
-              <p className="font-display text-5xl leading-none" style={{ color: accent, textShadow: `0 0 20px ${accent}60` }}>01</p>
+              <p className="font-display text-5xl leading-none" style={{ color: accent, textShadow: `0 0 20px ${accent}60` }}>{variant.unit}</p>
               <div className="mt-4 space-y-2.5">
                 {[
-                  { k: "CLASS", v: "EVANGELION" },
-                  { k: "PILOT", v: "3RD CHILD" },
-                  { k: "STATUS", v: isExceeded ? "BERSERKER" : phase === "boot" ? "STANDBY" : "ACTIVE", alert: isExceeded },
-                  { k: "LCL RATIO", v: "NOMINAL" },
+                  { k: "CLASS", v: variant.class },
+                  { k: "PILOT", v: variant.pilot },
+                  { k: "STATUS", v: isExceeded ? variant.activeStatus : phase === "boot" ? variant.bootStatus : "ACTIVE", alert: isExceeded },
+                  { k: "LCL RATIO", v: variant.lclDisplay },
                   { k: "PLUG DEPTH", v: isExceeded ? "EXCEEDED" : phase === "boot" ? "CALIBRATING" : `${(syncPct * 0.18).toFixed(1)}m` },
                 ].map(({ k, v, alert }) => (
                   <div key={k} className="flex items-center justify-between gap-2">
@@ -576,7 +667,7 @@ function SyncModal({ onClose }) {
                   transition={{ duration: 0.45, repeat: Infinity }}
                   className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-orange)]"
                 >
-                  ⚠ ABSOLUTE BORDERLINE EXCEEDED ⚠
+                  {variant.exceededBanner}
                 </motion.p>
               </motion.div>
             )}
@@ -607,7 +698,7 @@ function SyncModal({ onClose }) {
               <span className="font-mono-tech text-[9px] uppercase tracking-[0.3em]" style={{ color: accent }}>
                 {phase === "boot" ? "▸ SYSTEM BOOT" :
                  phase === "syncing" ? "▸ SYNC IN PROGRESS" :
-                 isExceeded ? "▸ BERSERKER ALERT" : "▸ SYNC COMPLETE"}
+                 isExceeded ? `▸ ${variant.activeStatus} ALERT` : "▸ SYNC COMPLETE"}
               </span>
             </div>
 
@@ -686,7 +777,7 @@ function SyncModal({ onClose }) {
         style={{ borderTopColor: `${accent}25`, backgroundColor: `${accent}05` }}
       >
         <span className="font-mono-tech text-[8px] uppercase tracking-[0.3em] text-white/25">
-          unit_01 ▸ {isExceeded ? "EMERGENCY — SYSTEM OVERRIDE ACTIVE" : "eva synchronization sequence"}
+          unit_{variant.unit} ▸ {isExceeded ? `${variant.activeStatus} — SYSTEM OVERRIDE ACTIVE` : "eva synchronization sequence"}
         </span>
         <button type="button" onClick={onClose}
           className="font-mono-tech text-[8px] uppercase tracking-[0.3em] text-white/25 transition hover:text-white/50"
