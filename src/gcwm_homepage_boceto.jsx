@@ -307,6 +307,398 @@ function SubscriptionModal() {
 }
 
 // ═══════════════════════════════════════════════════════
+// SYNC MODAL — animación de sincronización EVA-01
+// ═══════════════════════════════════════════════════════
+function SyncModal({ onClose }) {
+  const [syncPct, setSyncPct] = useState(0);
+  const [phase, setPhase] = useState("boot"); // boot | syncing | exceeded | complete
+  const [log, setLog] = useState([]);
+  const [bars, setBars] = useState({ at: 0, neural: 0, bio: 0 });
+  const rafRef = useRef(null);
+  const activeRef = useRef(true);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    activeRef.current = true;
+    const timerIds = [];
+
+    const LOG_LINES = [
+      "MAGI_01 BALTHASAR ........... ONLINE",
+      "MAGI_02 MELCHIOR ............ ONLINE",
+      "MAGI_03 CASPER .............. ONLINE",
+      "ENTRY PLUG: PRESSURIZATION OK",
+      "NEURAL INTERFACE: ESTABLISHED",
+    ];
+
+    LOG_LINES.forEach((line, i) => {
+      timerIds.push(setTimeout(() => {
+        setLog((prev) => [line, ...prev].slice(0, 6));
+      }, i * 180));
+    });
+
+    // Animate sidebar bars while booting
+    let barProgress = 0;
+    const barInterval = setInterval(() => {
+      barProgress = Math.min(barProgress + 2.5, 100);
+      setBars({ at: barProgress * 0.68, neural: barProgress * 0.89, bio: barProgress * 0.714 });
+      if (barProgress >= 100) clearInterval(barInterval);
+    }, 20);
+
+    // Start sync counter
+    timerIds.push(setTimeout(() => {
+      if (!activeRef.current) return;
+      clearInterval(barInterval);
+      setPhase("syncing");
+
+      let startTime = null;
+
+      function step(timestamp) {
+        if (!activeRef.current) return;
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+
+        if (elapsed < 2200) {
+          const t = elapsed / 2200;
+          const eased = 1 - Math.pow(1 - t, 2.5);
+          setSyncPct(eased * 71.4);
+          rafRef.current = requestAnimationFrame(step);
+        } else if (elapsed < 2900) {
+          setSyncPct(71.4);
+          rafRef.current = requestAnimationFrame(step);
+        } else if (elapsed < 3300) {
+          const t = (elapsed - 2900) / 400;
+          setSyncPct(71.4 + Math.pow(t, 0.4) * (400 - 71.4));
+          rafRef.current = requestAnimationFrame(step);
+        } else {
+          setSyncPct(400);
+          setBars({ at: 100, neural: 100, bio: 100 });
+          setLog(() => [
+            "!!! ABSOLUTE BORDERLINE EXCEEDED !!!",
+            "!!! BERSERKER MODE ACTIVE !!!",
+            "!!! PILOT EJECT: FAILED !!!",
+            LOG_LINES[0],
+            LOG_LINES[1],
+            LOG_LINES[2],
+          ]);
+          setPhase("exceeded");
+
+          timerIds.push(setTimeout(() => {
+            if (!activeRef.current) return;
+            setPhase("complete");
+            timerIds.push(setTimeout(() => {
+              if (activeRef.current) onCloseRef.current();
+            }, 900));
+          }, 2200));
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(step);
+    }, 900));
+
+    return () => {
+      activeRef.current = false;
+      timerIds.forEach(clearTimeout);
+      clearInterval(barInterval);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    function onKey(e) { if (e.key === "Escape") onClose(); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const isExceeded = phase === "exceeded";
+  const isComplete = phase === "complete";
+  const accent = isExceeded ? "#FF6B1A" : "#A8FF60";
+
+  const displayPct = syncPct >= 400 ? "400.0" : syncPct.toFixed(1);
+  const elapsedSec = Math.floor((syncPct / 400) * 300);
+  const opTime = `T+${String(Math.floor(elapsedSec / 60)).padStart(2, "0")}:${String(elapsedSec % 60).padStart(2, "0")}`;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: isComplete ? 0 : 1 }}
+      transition={{ duration: isComplete ? 0.9 : 0.25 }}
+      className="fixed inset-0 z-[200] overflow-hidden bg-black eva-scanline"
+    >
+      {/* Grid */}
+      <div className="absolute inset-0 eva-grid-bg opacity-15" />
+
+      {/* Orange alarm wash when exceeded */}
+      {isExceeded && (
+        <motion.div
+          animate={{ opacity: [0.04, 0.12, 0.04, 0.14, 0.04] }}
+          transition={{ duration: 0.35, repeat: Infinity }}
+          className="absolute inset-0 bg-[var(--eva-orange)]"
+        />
+      )}
+
+      {/* Large HUD corners */}
+      {["left-4 top-4 border-l-[3px] border-t-[3px]", "right-4 top-4 border-r-[3px] border-t-[3px]", "bottom-4 left-4 border-b-[3px] border-l-[3px]", "bottom-4 right-4 border-b-[3px] border-r-[3px]"].map((cls, i) => (
+        <div key={i} className={`pointer-events-none absolute h-14 w-14 transition-colors duration-500 ${cls}`} style={{ borderColor: accent }} />
+      ))}
+
+      {/* Top bar */}
+      <motion.div
+        initial={{ y: -40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="absolute left-0 right-0 top-0 flex items-center justify-between px-6 py-3 border-b md:px-8"
+        style={{ borderBottomColor: `${accent}30`, backgroundColor: `${accent}08` }}
+      >
+        <div className="flex items-center gap-3 md:gap-5">
+          <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: accent }} />
+          <span className="font-mono-tech text-[8px] uppercase tracking-[0.35em] md:text-[9px]" style={{ color: accent }}>
+            NERV HQ // MAGI SYSTEM // CLR LVL 4
+          </span>
+          {isExceeded && (
+            <motion.span
+              animate={{ opacity: [1, 0.2, 1] }}
+              transition={{ duration: 0.35, repeat: Infinity }}
+              className="hidden rounded-sm border px-2 py-0.5 font-mono-tech text-[8px] uppercase tracking-[0.2em] text-[var(--eva-orange)] md:inline-block"
+              style={{ borderColor: "#FF6B1A" }}
+            >
+              ⚠ EMERGENCY
+            </motion.span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 md:gap-5">
+          <span className="hidden font-mono-tech text-[8px] uppercase tracking-wider text-white/30 md:block">
+            {new Date().toLocaleTimeString()}
+          </span>
+          <button type="button" onClick={onClose}
+            className="grid h-7 w-7 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-500 transition hover:text-white"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Main layout */}
+      <div className="absolute inset-0 flex items-center justify-center pt-14 pb-12">
+        <div className="grid w-full max-w-5xl grid-cols-1 gap-4 px-5 md:grid-cols-[0.7fr_1fr_0.7fr] md:gap-5 md:px-8">
+
+          {/* Left panel — desktop only */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.35, duration: 0.6 }}
+            className="hidden space-y-4 md:block"
+          >
+            <div className="rounded-sm border border-white/10 bg-black/70 p-4 backdrop-blur">
+              <p className="mb-3 font-mono-tech text-[8px] uppercase tracking-[0.4em]" style={{ color: accent }}>▸ unit_registry</p>
+              <p className="font-display text-4xl leading-none text-white">UNIT</p>
+              <p className="font-display text-5xl leading-none" style={{ color: accent, textShadow: `0 0 20px ${accent}60` }}>01</p>
+              <div className="mt-4 space-y-2.5">
+                {[
+                  { k: "CLASS", v: "EVANGELION" },
+                  { k: "PILOT", v: "3RD CHILD" },
+                  { k: "STATUS", v: isExceeded ? "BERSERKER" : phase === "boot" ? "STANDBY" : "ACTIVE", alert: isExceeded },
+                  { k: "LCL RATIO", v: "NOMINAL" },
+                  { k: "PLUG DEPTH", v: isExceeded ? "EXCEEDED" : phase === "boot" ? "CALIBRATING" : `${(syncPct * 0.18).toFixed(1)}m` },
+                ].map(({ k, v, alert }) => (
+                  <div key={k} className="flex items-center justify-between gap-2">
+                    <span className="font-mono-tech text-[7px] uppercase tracking-[0.2em] text-white/30">{k}</span>
+                    <span className="font-mono-tech text-[8px] uppercase" style={{ color: alert ? "#FF6B1A" : "rgba(255,255,255,0.7)" }}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-sm border border-white/5 bg-black/40 p-4">
+              <p className="mb-3 font-mono-tech text-[8px] uppercase tracking-[0.3em] text-white/30">▸ sys_log</p>
+              <div className="space-y-1.5">
+                {(log.length ? log : ["...BOOTING..."]).map((line, i) => (
+                  <p key={i} className="font-mono-tech text-[8px] leading-4"
+                    style={{ color: line.startsWith("!!!") ? "#FF6B1A" : "rgba(255,255,255,0.3)" }}>
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Center — sync rate display */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.5 }}
+            className="flex flex-col items-center justify-center gap-5"
+          >
+            <p className="font-mono-tech text-[9px] uppercase tracking-[0.5em] text-white/40">
+              synchronization rate
+            </p>
+
+            {/* Big number */}
+            <div
+              className="relative rounded-sm border-2 px-8 py-5 text-center transition-all duration-500"
+              style={{
+                borderColor: accent,
+                boxShadow: `0 0 60px ${accent}40, inset 0 0 40px ${accent}06`,
+              }}
+            >
+              {/* Inner HUD tick marks */}
+              {["absolute -left-px -top-px h-4 w-4 border-l border-t", "absolute -right-px -top-px h-4 w-4 border-r border-t", "absolute -bottom-px -left-px h-4 w-4 border-b border-l", "absolute -bottom-px -right-px h-4 w-4 border-b border-r"].map((cls, i) => (
+                <div key={i} className={`pointer-events-none ${cls}`} style={{ borderColor: accent }} />
+              ))}
+
+              <motion.div
+                className="font-display leading-none"
+                animate={isExceeded ? { scale: [1, 1.015, 1] } : {}}
+                transition={{ duration: 0.25, repeat: Infinity }}
+                style={{
+                  fontSize: "clamp(5rem, 14vw, 9.5rem)",
+                  color: accent,
+                  textShadow: `0 0 40px ${accent}, 0 0 80px ${accent}50`,
+                  transition: "color 0.5s, text-shadow 0.5s",
+                }}
+              >
+                {displayPct}
+              </motion.div>
+              <p className="font-mono-tech text-xs uppercase tracking-[0.4em]"
+                style={{ color: accent, opacity: 0.6 }}>
+                percent sync
+              </p>
+            </div>
+
+            {/* EXCEEDED banner */}
+            {isExceeded && (
+              <motion.div
+                initial={{ opacity: 0, scaleX: 0.6 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                className="w-full rounded-sm border border-[var(--eva-orange)]/50 bg-[var(--eva-orange)]/10 px-4 py-2 text-center"
+              >
+                <motion.p
+                  animate={{ opacity: [1, 0.25, 1] }}
+                  transition={{ duration: 0.45, repeat: Infinity }}
+                  className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-orange)]"
+                >
+                  ⚠ ABSOLUTE BORDERLINE EXCEEDED ⚠
+                </motion.p>
+              </motion.div>
+            )}
+
+            {/* Progress bar */}
+            <div className="w-full space-y-1.5">
+              <div className="relative h-2 overflow-hidden rounded-full bg-white/5">
+                <motion.div
+                  className="absolute inset-y-0 left-0 rounded-full"
+                  style={{ backgroundColor: accent, boxShadow: `0 0 10px ${accent}` }}
+                  animate={{ width: `${Math.min((syncPct / 400) * 100, 100)}%` }}
+                  transition={{ duration: 0.06 }}
+                />
+                {/* 71.4% threshold marker */}
+                <div className="absolute inset-y-0 w-px bg-white/50" style={{ left: `${(71.4 / 400) * 100}%` }} />
+              </div>
+              <div className="flex justify-between font-mono-tech text-[7px] uppercase tracking-wider text-white/25">
+                <span>0%</span>
+                <span style={{ color: `${accent}90` }}>71.4% limit</span>
+                <span>400%</span>
+              </div>
+            </div>
+
+            {/* Phase badge */}
+            <div className="inline-flex items-center gap-2 rounded-sm border px-3 py-2 transition-all duration-500"
+              style={{ borderColor: `${accent}40`, backgroundColor: `${accent}08` }}>
+              <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{ backgroundColor: accent }} />
+              <span className="font-mono-tech text-[9px] uppercase tracking-[0.3em]" style={{ color: accent }}>
+                {phase === "boot" ? "▸ SYSTEM BOOT" :
+                 phase === "syncing" ? "▸ SYNC IN PROGRESS" :
+                 isExceeded ? "▸ BERSERKER ALERT" : "▸ SYNC COMPLETE"}
+              </span>
+            </div>
+
+            {/* Mobile log */}
+            <div className="w-full rounded-sm border border-white/5 bg-black/40 p-3 md:hidden">
+              {(log.length ? log : ["...BOOTING..."]).slice(0, 3).map((line, i) => (
+                <p key={i} className="font-mono-tech text-[8px] leading-5"
+                  style={{ color: line.startsWith("!!!") ? "#FF6B1A" : "rgba(255,255,255,0.3)" }}>
+                  {line}
+                </p>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right panel — desktop only */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.35, duration: 0.6 }}
+            className="hidden space-y-4 md:block"
+          >
+            <div className="rounded-sm border border-white/10 bg-black/70 p-4 backdrop-blur">
+              <p className="mb-4 font-mono-tech text-[8px] uppercase tracking-[0.4em]" style={{ color: accent }}>▸ bio_metrics</p>
+              {[
+                { label: "A.T. FIELD", val: bars.at, target: 68 },
+                { label: "NEURAL LINK", val: bars.neural, target: 89 },
+                { label: "BIO-SIGNALS", val: bars.bio, target: 71.4 },
+              ].map(({ label, val, target }) => (
+                <div key={label} className="mb-4">
+                  <div className="mb-1.5 flex justify-between">
+                    <span className="font-mono-tech text-[7px] uppercase tracking-[0.2em] text-white/30">{label}</span>
+                    <span className="font-mono-tech text-[8px] font-bold" style={{ color: accent }}>
+                      {isExceeded ? "OVER" : `${Math.round(val)}%`}
+                    </span>
+                  </div>
+                  <div className="relative h-1.5 overflow-hidden rounded-full bg-white/5">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: accent, boxShadow: `0 0 5px ${accent}` }}
+                      animate={{ width: isExceeded ? "100%" : `${(val / target) * 100}%` }}
+                      transition={{ duration: 0.15 }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-sm border border-white/5 bg-black/40 p-5 text-center">
+              <p className="font-display text-5xl leading-none transition-colors duration-500"
+                style={{ color: accent, textShadow: `0 0 20px ${accent}40`, opacity: 0.7 }}>
+                NERV
+              </p>
+              <div className="mt-3 font-mono-tech text-[7px] uppercase tracking-[0.15em] text-white/20">
+                <p>GOD'S IN HIS HEAVEN</p>
+                <p>ALL'S RIGHT WITH THE WORLD</p>
+              </div>
+            </div>
+
+            <div className="rounded-sm border border-white/5 bg-black/40 p-4">
+              <p className="mb-2 font-mono-tech text-[7px] uppercase tracking-[0.3em] text-white/30">▸ op_time</p>
+              <p className="font-display text-3xl transition-colors duration-500" style={{ color: accent }}>
+                {opTime}
+              </p>
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
+
+      {/* Bottom bar */}
+      <motion.div
+        initial={{ y: 40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-6 py-3 border-t md:px-8"
+        style={{ borderTopColor: `${accent}25`, backgroundColor: `${accent}05` }}
+      >
+        <span className="font-mono-tech text-[8px] uppercase tracking-[0.3em] text-white/25">
+          unit_01 ▸ {isExceeded ? "EMERGENCY — SYSTEM OVERRIDE ACTIVE" : "eva synchronization sequence"}
+        </span>
+        <button type="button" onClick={onClose}
+          className="font-mono-tech text-[8px] uppercase tracking-[0.3em] text-white/25 transition hover:text-white/50"
+        >
+          [ESC] abort
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // DISCIPLINES DROPDOWN — submenu que se abre con hover
 // ═══════════════════════════════════════════════════════
 function DisciplinesMenu({ openCategory, isCategoryActive }) {
@@ -455,6 +847,7 @@ function DisciplinesMenu({ openCategory, isCategoryActive }) {
 function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [syncOpen, setSyncOpen] = useState(false);
 
   useEffect(() => {
     function onScroll() {
@@ -551,6 +944,7 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
 
             <button
               type="button"
+              onClick={() => setSyncOpen(true)}
               className="hidden rounded-lg border border-[var(--eva-green)]/40 bg-[var(--eva-green)]/10 px-4 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] text-[var(--eva-green)] transition-colors hover:bg-[var(--eva-green)]/20 md:block"
             >
               Sync ▸
@@ -567,6 +961,8 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
           </div>
         </div>
       </header>
+
+      {syncOpen && <SyncModal onClose={() => setSyncOpen(false)} />}
 
       {/* Menú móvil */}
       {mobileOpen && (
