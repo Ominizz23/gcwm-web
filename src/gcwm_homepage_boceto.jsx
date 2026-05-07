@@ -1317,46 +1317,23 @@ function HomePage({ setPage, openCategory }) {
               <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
               <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
 
-              <div className="relative aspect-video overflow-hidden bg-gradient-to-br from-[var(--eva-purple-deep)] via-black to-[var(--eva-purple)]/50 p-6 md:p-8 eva-scanline">
-                <div className="absolute inset-0 eva-grid-bg opacity-30" />
-
-                <div className="relative flex h-full flex-col justify-between">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 rounded-sm border border-[var(--eva-orange)]/40 bg-black/60 px-3 py-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--eva-orange)] eva-pulse" />
-                      <span className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-orange)]">REC ▸ destacado</span>
-                    </div>
-                    <PlayCircle className="h-7 w-7 text-[var(--eva-green)]" />
-                  </div>
-
-                  <div>
-                    <p className="mb-3 font-mono-tech text-[11px] uppercase tracking-[0.25em] text-[var(--eva-green)]">
-                      Curso gratuito · Tech Props
-                    </p>
-                    <h2 className="font-display text-3xl leading-none text-white drop-shadow-[0_0_20px_rgba(168,255,96,0.3)] md:text-5xl">
-                      Forjá tu primer <br />
-                      <span className="text-[var(--eva-green)]">prop con LEDs</span>
-                    </h2>
-                    <p className="mt-3 max-w-sm text-sm leading-6 text-slate-400">
-                      Luces, materiales, magia visual y armado paso a paso.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => openCategory("electronica")}
-                    className="flex w-fit items-center gap-2 rounded-sm bg-[var(--eva-green)] px-4 py-3 font-mono-tech text-[11px] font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white"
-                  >
-                    <PlayCircle className="h-4 w-4" />
-                    Reproducir
-                  </button>
-                </div>
+              <div className="relative aspect-video overflow-hidden bg-black">
+                <iframe
+                  src="https://www.youtube.com/embed/CMF3qeu7fHY?autoplay=1&mute=1&loop=1&playlist=CMF3qeu7fHY&controls=1&rel=0&modestbranding=1"
+                  className="absolute inset-0 h-full w-full"
+                  allow="autoplay; encrypted-media; fullscreen"
+                  allowFullScreen
+                  title="GCWM — featured video"
+                />
               </div>
             </div>
 
             <div className="mt-3 flex items-center justify-between rounded-sm border border-white/5 bg-black/60 px-4 py-3">
-              <span className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-slate-500">▸ signal_locked</span>
-              <span className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-green)]">unit_01_ready</span>
+              <span className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-slate-500">▸ stream_active</span>
+              <span className="flex items-center gap-1.5 font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-orange)]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--eva-orange)] eva-pulse" />
+                live_preview
+              </span>
             </div>
           </motion.div>
         </div>
