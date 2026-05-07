@@ -5,6 +5,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  Heart,
   Images,
   Instagram,
   Link2,
@@ -12,12 +14,15 @@ import {
   Menu,
   MessageCircle,
   PlayCircle,
+  Scissors,
   Search,
   ShoppingBag,
   Sparkles,
   User,
   Users,
+  Wand2,
   X,
+  Zap,
 } from "lucide-react";
 
 import { categories, getCategory } from "./data/categories";
@@ -38,6 +43,22 @@ const SUBSCRIPTION_ENDPOINT = "https://script.google.com/macros/s/AKfycbyazKz-uS
 
 // Cuántos segundos esperar antes de mostrar el modal de suscripción
 const SUBSCRIPTION_MODAL_DELAY_MS = 8000;
+
+// Próximo evento de cosplay
+const NEXT_EVENT = {
+  name: "Cosmo Buenos Aires 2026",
+  date: new Date("2026-11-07T10:00:00-03:00"),
+  location: "Buenos Aires, AR",
+};
+
+// Arquetipos para el Build Wizard
+const BUILD_ARCHETYPES = [
+  { id: "armored", label: "Guerrero / Armadura", desc: "Piezas rígidas, armas y armaduras elaboradas.", categories: ["props", "electronica"] },
+  { id: "fabric", label: "Traje de Tela", desc: "Costura, moldería y trajes ajustados al personaje.", categories: ["tela", "pelucas"] },
+  { id: "tech", label: "Cyborg / Sci-Fi", desc: "LEDs reactivos, circuitos y efectos tecnológicos integrados.", categories: ["electronica", "props"] },
+  { id: "fantasy", label: "Fantasy / Mágico", desc: "Peinados imposibles, telas vaporosas y accesorios mágicos.", categories: ["pelucas", "tela"] },
+  { id: "full", label: "Full Build", desc: "El arsenal completo: tela, props, peluca y electrónica.", categories: ["tela", "props", "pelucas", "electronica"] },
+];
 
 // ───────────────────────────────────────────────────────
 // Helper: enviar suscripción al endpoint de Google Sheets
@@ -935,7 +956,7 @@ function DisciplinesMenu({ openCategory, isCategoryActive }) {
 // ═══════════════════════════════════════════════════════
 // HEADER — sticky + compacto al hacer scroll
 // ═══════════════════════════════════════════════════════
-function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
+function Header({ page, setPage, openCategory, cartCount, onOpenCart, onOpenSearch, onOpenBuild }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [syncOpen, setSyncOpen] = useState(false);
@@ -950,6 +971,18 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
   }, []);
 
   useEffect(() => { setMobileOpen(false); }, [page]);
+
+  // Ctrl+K / Cmd+K abre la búsqueda global
+  useEffect(() => {
+    function onKey(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        onOpenSearch();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onOpenSearch]);
 
   const navButton = (targetPage, label) => (
     <button
@@ -1016,9 +1049,26 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
             >
               Comunidad
             </button>
+            <button
+              type="button"
+              onClick={onOpenBuild}
+              className="font-mono-tech text-xs uppercase tracking-[0.2em] text-[var(--eva-orange)] transition-colors hover:text-white"
+            >
+              Build ▸
+            </button>
           </nav>
 
           <div className="flex items-center gap-3">
+            {/* Botón de búsqueda global */}
+            <button
+              type="button"
+              onClick={onOpenSearch}
+              className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/40 p-2.5 transition-colors hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/5"
+              aria-label="Buscar"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden font-mono-tech text-[10px] uppercase tracking-wider text-slate-500 md:inline">⌘K</span>
+            </button>
             <button
               type="button"
               onClick={onOpenCart}
@@ -1136,6 +1186,15 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart }) {
                 )}
               >
                 Profesionales
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setMobileOpen(false); onOpenBuild(); }}
+                className="flex w-full items-center gap-3 rounded-sm border border-[var(--eva-orange)]/30 bg-[var(--eva-orange)]/5 px-4 py-3 font-mono-tech text-xs uppercase tracking-[0.2em] text-[var(--eva-orange)] transition hover:bg-[var(--eva-orange)]/10"
+              >
+                <Wand2 className="h-4 w-4" />
+                Armá tu build
               </button>
             </div>
           </nav>
@@ -1301,6 +1360,9 @@ function HomePage({ setPage, openCategory }) {
           </motion.div>
         </div>
       </section>
+
+      {/* EVENTO PRÓXIMO */}
+      <EventCountdown />
 
       {/* CATEGORÍAS */}
       <section className="relative z-10 mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-24">
@@ -1557,7 +1619,7 @@ function CategoryPage({ activeCategoryId, setPage, openCategory }) {
 // ═══════════════════════════════════════════════════════
 // SHOP PAGE
 // ═══════════════════════════════════════════════════════
-function ShopPage({ cart, setCart }) {
+function ShopPage({ cart, setCart, wishlist, toggleWishlist }) {
   const [query, setQuery] = useState("");
   const [sector, setSector] = useState("todos");
 
@@ -1717,6 +1779,19 @@ function ShopPage({ cart, setCart }) {
                       </span>
                       <ShoppingBag className="h-10 w-10 text-white/80" />
                     </div>
+                    {/* Botón wishlist */}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); toggleWishlist(item.id); }}
+                      className="absolute right-2 top-2 z-10 grid h-7 w-7 place-items-center rounded-sm border border-white/20 bg-black/60 text-white/60 transition hover:text-white"
+                      aria-label={wishlist.has(item.id) ? "Quitar de guardados" : "Guardar"}
+                    >
+                      <Heart
+                        className="h-3.5 w-3.5"
+                        fill={wishlist.has(item.id) ? "var(--eva-orange)" : "none"}
+                        stroke={wishlist.has(item.id) ? "var(--eva-orange)" : "currentColor"}
+                      />
+                    </button>
                   </div>
                   <p className={cn("font-mono-tech text-[10px] uppercase tracking-[0.2em]", cat.text)}>{item.sector}</p>
                   <h3 className="mt-2 line-clamp-2 min-h-[2.5rem] text-base font-bold leading-tight text-white">{item.name}</h3>
@@ -2412,7 +2487,7 @@ function ProfessionalsPage() {
 // ═══════════════════════════════════════════════════════
 // CART MODAL — resumen del pedido con doble confirmación
 // ═══════════════════════════════════════════════════════
-function CartModal({ cart, setCart, onClose }) {
+function CartModal({ cart, setCart, onClose, wishlist, toggleWishlist }) {
   const [confirming, setConfirming] = useState(false);
 
   const cartLines = useMemo(() => {
@@ -2560,6 +2635,43 @@ function CartModal({ cart, setCart, onClose }) {
               </div>
             )}
           </div>
+
+          {/* Guardados (wishlist items not in cart) */}
+          {(() => {
+            const savedItems = shopItems.filter((i) => wishlist && wishlist.has(i.id) && !cart[i.id]);
+            if (!savedItems.length) return null;
+            return (
+              <div className="border-t border-white/5 px-5 py-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Heart className="h-3.5 w-3.5 text-[var(--eva-orange)]" fill="var(--eva-orange)" />
+                  <p className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-orange)]">▸ guardados</p>
+                </div>
+                <div className="space-y-2">
+                  {savedItems.map((item) => {
+                    const cat = getCategory(item.category);
+                    return (
+                      <div key={item.id} className="flex items-center gap-3 rounded-sm border border-white/5 bg-black/40 p-3">
+                        <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-sm bg-gradient-to-br", cat.color)}>
+                          <ShoppingBag className="h-4 w-4 text-white/70" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="line-clamp-1 text-xs font-bold text-white">{item.name}</p>
+                          <p className="font-mono-tech text-[10px] text-[var(--eva-green)]">{formatPrice(item.price)}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => addToCart(item.id)}
+                          className="shrink-0 rounded-sm border border-[var(--eva-green)]/40 bg-[var(--eva-green)]/10 px-2.5 py-1.5 font-mono-tech text-[10px] font-bold text-[var(--eva-green)] transition hover:bg-[var(--eva-green)] hover:text-black"
+                        >
+                          Agregar +
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Upsell */}
           {upsellItems.length > 0 && (
@@ -2859,6 +2971,545 @@ function ContactModal({ onClose }) {
 }
 
 // ═══════════════════════════════════════════════════════
+// SEARCH MODAL — búsqueda global ⌘K / Ctrl+K
+// ═══════════════════════════════════════════════════════
+function SearchModal({ onClose, setPage, openCategory }) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return null;
+    const products = shopItems
+      .filter((i) => i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q))
+      .slice(0, 4);
+    const tuts = tutorials
+      .filter((t) => t.title.toLowerCase().includes(q) || t.tag.toLowerCase().includes(q))
+      .slice(0, 3);
+    const pros = professionals
+      .filter((p) => p.name.toLowerCase().includes(q) || p.role.toLowerCase().includes(q) || (p.bio && p.bio.toLowerCase().includes(q)))
+      .slice(0, 3);
+    return { products, tuts, pros };
+  }, [query]);
+
+  const hasResults = results && (results.products.length + results.tuts.length + results.pros.length) > 0;
+
+  function handleProductClick(item) {
+    setPage("shop");
+    onClose();
+  }
+
+  function handleTutorialClick(t) {
+    openCategory(t.category);
+    onClose();
+  }
+
+  function handleProClick() {
+    setPage("professionals");
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-start justify-center pt-20 p-4">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: -16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-2xl overflow-hidden rounded-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80"
+      >
+        {/* Esquinas HUD */}
+        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+
+        {/* Input */}
+        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+          <Search className="h-4 w-4 shrink-0 text-[var(--eva-green)]" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar productos, tutoriales, profesionales..."
+            className="min-w-0 flex-1 bg-transparent font-mono-tech text-sm text-white outline-none placeholder:text-slate-500"
+          />
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:text-white"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        {/* Resultados */}
+        <div className="max-h-[60vh] overflow-y-auto p-3">
+          {!query.trim() ? (
+            <div>
+              <p className="mb-3 px-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-slate-500">▸ acceso rápido</p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Tienda", sub: "productos y materiales", icon: ShoppingBag, action: () => { setPage("shop"); onClose(); } },
+                  { label: "Profesionales", sub: "expertos certificados", icon: Users, action: () => { setPage("professionals"); onClose(); } },
+                  { label: "Tutoriales", sub: "cursos gratuitos", icon: PlayCircle, action: () => { openCategory("electronica"); onClose(); } },
+                ].map((s) => {
+                  const Icon = s.icon;
+                  return (
+                    <button
+                      key={s.label}
+                      type="button"
+                      onClick={s.action}
+                      className="flex flex-col items-start gap-2 rounded-sm border border-white/5 bg-black/40 p-4 text-left transition hover:border-[var(--eva-green)]/30 hover:bg-[var(--eva-green)]/5"
+                    >
+                      <Icon className="h-5 w-5 text-[var(--eva-green)]" />
+                      <div>
+                        <p className="text-sm font-bold text-white">{s.label}</p>
+                        <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{s.sub}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : !hasResults ? (
+            <div className="py-10 text-center">
+              <p className="font-mono-tech text-sm text-slate-400">▸ sin resultados para "{query}"</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {results.products.length > 0 && (
+                <div>
+                  <p className="mb-2 px-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ productos</p>
+                  <div className="space-y-1">
+                    {results.products.map((item) => {
+                      const cat = getCategory(item.category);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => handleProductClick(item)}
+                          className="flex w-full items-center gap-3 rounded-sm border border-white/5 bg-black/40 px-3 py-3 text-left transition hover:border-[var(--eva-green)]/30 hover:bg-[var(--eva-green)]/5"
+                        >
+                          <ShoppingBag className="h-4 w-4 shrink-0 text-slate-400" />
+                          <div className="min-w-0 flex-1">
+                            <p className="line-clamp-1 text-sm font-bold text-white">{item.name}</p>
+                            <p className={cn("font-mono-tech text-[10px] uppercase tracking-wider", cat.text)}>{cat.label}</p>
+                          </div>
+                          <span className="shrink-0 font-mono-tech text-xs font-bold text-[var(--eva-green)]">{formatPrice(item.price)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {results.tuts.length > 0 && (
+                <div>
+                  <p className="mb-2 px-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ tutoriales</p>
+                  <div className="space-y-1">
+                    {results.tuts.map((t) => {
+                      const cat = getCategory(t.category);
+                      return (
+                        <button
+                          key={t.title}
+                          type="button"
+                          onClick={() => handleTutorialClick(t)}
+                          className="flex w-full items-center gap-3 rounded-sm border border-white/5 bg-black/40 px-3 py-3 text-left transition hover:border-[var(--eva-green)]/30 hover:bg-[var(--eva-green)]/5"
+                        >
+                          <PlayCircle className="h-4 w-4 shrink-0 text-slate-400" />
+                          <div className="min-w-0 flex-1">
+                            <p className="line-clamp-1 text-sm font-bold text-white">{t.title}</p>
+                            <p className={cn("font-mono-tech text-[10px] uppercase tracking-wider", cat.text)}>{t.tag}</p>
+                          </div>
+                          <span className="shrink-0 font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{t.level}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {results.pros.length > 0 && (
+                <div>
+                  <p className="mb-2 px-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ profesionales</p>
+                  <div className="space-y-1">
+                    {results.pros.map((p) => {
+                      const cat = getCategory(p.category);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={handleProClick}
+                          className="flex w-full items-center gap-3 rounded-sm border border-white/5 bg-black/40 px-3 py-3 text-left transition hover:border-[var(--eva-green)]/30 hover:bg-[var(--eva-green)]/5"
+                        >
+                          <Users className="h-4 w-4 shrink-0 text-slate-400" />
+                          <div className="min-w-0 flex-1">
+                            <p className="line-clamp-1 text-sm font-bold text-white">{p.name}</p>
+                            <p className={cn("font-mono-tech text-[10px] uppercase tracking-wider", cat.text)}>{p.role}</p>
+                          </div>
+                          <span className="shrink-0 font-mono-tech text-[10px] text-[var(--eva-orange)]">★ {p.rating}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// EVENT COUNTDOWN — banner de contador para próximo evento
+// ═══════════════════════════════════════════════════════
+function EventCountdown() {
+  const [timeLeft, setTimeLeft] = useState(null);
+
+  useEffect(() => {
+    function calc() {
+      const diff = NEXT_EVENT.date - Date.now();
+      if (diff <= 0) {
+        setTimeLeft(null);
+        return;
+      }
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft({ d, h, m, s });
+    }
+    calc();
+    const id = setInterval(calc, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!timeLeft) return null;
+
+  const units = [
+    { value: String(timeLeft.d).padStart(2, "0"), label: "días" },
+    { value: String(timeLeft.h).padStart(2, "0"), label: "hs" },
+    { value: String(timeLeft.m).padStart(2, "0"), label: "min" },
+    { value: String(timeLeft.s).padStart(2, "0"), label: "seg" },
+  ];
+
+  return (
+    <div className="relative z-10 mx-auto max-w-7xl px-5 pb-8 md:px-8">
+      <div className="flex flex-col items-start justify-between gap-4 rounded-sm border border-[var(--eva-orange)]/20 bg-gradient-to-r from-[var(--eva-orange)]/5 to-transparent px-5 py-4 sm:flex-row sm:items-center">
+        {/* Left side */}
+        <div className="flex items-center gap-3">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--eva-orange)] eva-pulse" />
+          <div>
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-[var(--eva-orange)]">▸ próximo evento</p>
+            <p className="font-display text-lg text-white leading-tight">{NEXT_EVENT.name}</p>
+            <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{NEXT_EVENT.location}</p>
+          </div>
+        </div>
+        {/* Right side — countdown blocks */}
+        <div className="flex items-center gap-3">
+          <Clock className="h-4 w-4 shrink-0 text-[var(--eva-orange)]" />
+          <div className="flex items-center gap-2">
+            {units.map((u) => (
+              <div key={u.label} className="flex flex-col items-center rounded-sm border border-[var(--eva-orange)]/30 bg-black/60 px-3 py-2 min-w-[3rem] text-center">
+                <span className="font-display text-xl leading-none text-[var(--eva-orange)]">{u.value}</span>
+                <span className="font-mono-tech text-[9px] uppercase tracking-wider text-slate-500">{u.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
+// BUILD WIZARD — asistente "Armá tu build"
+// ═══════════════════════════════════════════════════════
+function BuildWizard({ onClose, setPage, openCategory }) {
+  const [step, setStep] = useState(1);
+  const [archetype, setArchetype] = useState(null);
+  const [selectedCats, setSelectedCats] = useState(new Set());
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function chooseArchetype(arch) {
+    setArchetype(arch);
+    setSelectedCats(new Set(arch.categories));
+    setStep(2);
+  }
+
+  function toggleCat(catId) {
+    setSelectedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(catId)) next.delete(catId);
+      else next.add(catId);
+      return next;
+    });
+  }
+
+  const recommendedProducts = useMemo(() => {
+    if (!selectedCats.size) return [];
+    return [...selectedCats].flatMap((catId) =>
+      shopItems.filter((i) => i.category === catId).slice(0, 2)
+    );
+  }, [selectedCats]);
+
+  const recommendedPros = useMemo(() => {
+    if (!selectedCats.size) return [];
+    return professionals.filter((p) => selectedCats.has(p.category)).slice(0, 4);
+  }, [selectedCats]);
+
+  const prices = recommendedProducts.map((i) => i.price);
+  const minPrice = prices.length ? Math.min(...prices) : 0;
+  const maxPrice = prices.length ? Math.round(Math.min(...prices) * 2.2) : 0;
+
+  const archetypeIcon = (id) => {
+    if (id === "armored") return Zap;
+    if (id === "fabric") return Scissors;
+    if (id === "tech") return Wand2;
+    if (id === "fantasy") return Sparkles;
+    return Users;
+  };
+
+  const stepTitles = ["Elegí tu arquetipo", "Seleccioná categorías", "Tu build"];
+  const progressWidths = ["33%", "66%", "100%"];
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80 max-h-[90vh]"
+      >
+        {/* Esquinas HUD */}
+        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+
+        {/* Progress bar */}
+        <div className="flex h-1 w-full overflow-hidden">
+          {[1, 2, 3].map((s) => (
+            <div
+              key={s}
+              className="flex-1 transition-colors duration-300"
+              style={{ backgroundColor: s <= step ? "var(--eva-green)" : "rgba(255,255,255,0.08)" }}
+            />
+          ))}
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+          <div>
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ paso {step}/3</p>
+            <h2 className="mt-0.5 font-display text-2xl text-white">{stepTitles[step - 1]}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-white/30 hover:text-white"
+            aria-label="Cerrar wizard"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {step === 1 && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {BUILD_ARCHETYPES.map((arch) => {
+                const Icon = archetypeIcon(arch.id);
+                return (
+                  <button
+                    key={arch.id}
+                    type="button"
+                    onClick={() => chooseArchetype(arch)}
+                    className="group flex flex-col items-start gap-3 rounded-sm border border-white/5 bg-black/40 p-4 text-left transition hover:border-[var(--eva-green)]/40 hover:bg-[var(--eva-green)]/5"
+                  >
+                    <div className="grid h-10 w-10 place-items-center rounded-sm border border-[var(--eva-green)]/30 bg-[var(--eva-green)]/10">
+                      <Icon className="h-5 w-5 text-[var(--eva-green)]" />
+                    </div>
+                    <div>
+                      <p className="font-display text-base text-white">{arch.label}</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-400">{arch.desc}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {arch.categories.map((catId) => {
+                        const cat = getCategory(catId);
+                        return (
+                          <span key={catId} className={cn("rounded-sm px-2 py-0.5 font-mono-tech text-[9px] uppercase tracking-wider", cat.bg, cat.text)}>
+                            {cat.label}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4">
+              <p className="text-sm text-slate-400">Basado en tu arquetipo. Podés ajustar las categorías.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {categories.map((cat) => {
+                  const Icon = cat.icon;
+                  const active = selectedCats.has(cat.id);
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => toggleCat(cat.id)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-sm border p-4 text-left transition",
+                        active ? cn(cat.border, cat.bg) : "border-white/5 bg-black/40 hover:border-white/20"
+                      )}
+                    >
+                      <Icon className={cn("h-5 w-5 shrink-0", active ? cat.text : "text-slate-500")} />
+                      <div>
+                        <p className="font-display text-base text-white">{cat.label}</p>
+                        <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{cat.shortLabel}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
+                >
+                  ← Volver
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedCats.size === 0}
+                  onClick={() => setStep(3)}
+                  className="flex-[1.5] rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:opacity-40"
+                >
+                  Ver mi build ▸
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-5">
+              {/* Presupuesto estimado */}
+              <div className="rounded-sm border border-[var(--eva-orange)]/30 bg-[var(--eva-orange)]/5 p-4">
+                <p className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-[var(--eva-orange)]">▸ presupuesto estimado</p>
+                <p className="mt-2 font-display text-3xl text-white">
+                  {formatPrice(minPrice)} — {formatPrice(maxPrice)}
+                </p>
+                <p className="mt-1 text-xs text-slate-400">Rango orientativo según materiales seleccionados.</p>
+              </div>
+
+              {/* Materiales recomendados */}
+              {recommendedProducts.length > 0 && (
+                <div>
+                  <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ materiales recomendados</p>
+                  <div className="space-y-2">
+                    {recommendedProducts.slice(0, 6).map((item) => {
+                      const cat = getCategory(item.category);
+                      const Icon = cat.icon;
+                      return (
+                        <div key={item.id} className="flex items-center gap-3 rounded-sm border border-white/5 bg-black/40 p-3">
+                          <div className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-sm bg-gradient-to-br", cat.color)}>
+                            <Icon className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="line-clamp-1 text-sm font-bold text-white">{item.name}</p>
+                            <p className={cn("font-mono-tech text-[10px] uppercase tracking-wider", cat.text)}>{cat.label}</p>
+                          </div>
+                          <span className="shrink-0 font-mono-tech text-xs font-bold text-[var(--eva-green)]">{formatPrice(item.price)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Profesionales recomendados */}
+              {recommendedPros.length > 0 && (
+                <div>
+                  <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ profesionales recomendados</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {recommendedPros.map((pro) => {
+                      const cat = getCategory(pro.category);
+                      return (
+                        <div key={pro.id} className="flex items-center gap-3 rounded-sm border border-white/5 bg-black/40 p-3">
+                          <div className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-sm bg-gradient-to-br font-display text-base text-white", cat.color)}>
+                            {pro.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="line-clamp-1 text-xs font-bold text-white">{pro.name}</p>
+                            <p className="font-mono-tech text-[9px] uppercase tracking-wider text-[var(--eva-orange)]">★ {pro.rating}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="flex-1 rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
+                >
+                  ← Ajustar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPage("shop"); onClose(); }}
+                  className="flex-[1.5] rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white"
+                >
+                  Ir a la tienda ▸
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // FOOTER
 // ═══════════════════════════════════════════════════════
 function Footer({ setPage }) {
@@ -3012,6 +3663,8 @@ export default function GCWMHomepageMockup() {
   const [page, setPage] = useState(() => getStateFromHash().page);
   const [activeCategory, setActiveCategory] = useState(() => getStateFromHash().category);
   const [cartOpen, setCartOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [buildOpen, setBuildOpen] = useState(false);
 
   // Carrito persistente: lee de localStorage al iniciar
   const [cart, setCart] = useState(() => {
@@ -3031,6 +3684,24 @@ export default function GCWMHomepageMockup() {
       // Si localStorage falla (modo incógnito, etc.) seguimos sin error
     }
   }, [cart]);
+
+  // Wishlist persistente
+  const [wishlist, setWishlist] = useState(() => {
+    try {
+      const s = localStorage.getItem("gcwm-wishlist");
+      return s ? new Set(JSON.parse(s)) : new Set();
+    } catch { return new Set(); }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("gcwm-wishlist", JSON.stringify([...wishlist])); } catch {}
+  }, [wishlist]);
+  function toggleWishlist(id) {
+    setWishlist((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   // Sincronizar estado cuando el usuario navega con botones del navegador
   useEffect(() => {
@@ -3076,14 +3747,18 @@ export default function GCWMHomepageMockup() {
         openCategory={openCategory}
         cartCount={cartCount}
         onOpenCart={() => setCartOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
+        onOpenBuild={() => setBuildOpen(true)}
       />
       {page === "home" && <HomePage setPage={changePage} openCategory={openCategory} />}
-      {page === "shop" && <ShopPage cart={cart} setCart={setCart} />}
+      {page === "shop" && <ShopPage cart={cart} setCart={setCart} wishlist={wishlist} toggleWishlist={toggleWishlist} />}
       {page === "professionals" && <ProfessionalsPage />}
       {page === "category" && <CategoryPage activeCategoryId={activeCategory} setPage={changePage} openCategory={openCategory} />}
       <Footer setPage={changePage} />
       <SubscriptionModal />
-      {cartOpen && <CartModal cart={cart} setCart={setCart} onClose={() => setCartOpen(false)} />}
+      {cartOpen && <CartModal cart={cart} setCart={setCart} onClose={() => setCartOpen(false)} wishlist={wishlist} toggleWishlist={toggleWishlist} />}
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} setPage={changePage} openCategory={openCategory} />}
+      {buildOpen && <BuildWizard onClose={() => setBuildOpen(false)} setPage={changePage} openCategory={openCategory} />}
     </main>
   );
 }
