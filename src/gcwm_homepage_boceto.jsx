@@ -1318,13 +1318,48 @@ function HomePage({ setPage, openCategory }) {
               <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
 
               <div className="relative aspect-video overflow-hidden bg-black">
+                {/* Video de fondo */}
                 <iframe
-                  src="https://www.youtube.com/embed/CMF3qeu7fHY?autoplay=1&mute=1&loop=1&playlist=CMF3qeu7fHY&controls=1&rel=0&modestbranding=1"
-                  className="absolute inset-0 h-full w-full"
+                  src="https://www.youtube.com/embed/CMF3qeu7fHY?autoplay=1&mute=1&loop=1&playlist=CMF3qeu7fHY&controls=0&rel=0&modestbranding=1"
+                  className="absolute inset-0 h-full w-full scale-110"
                   allow="autoplay; encrypted-media; fullscreen"
                   allowFullScreen
                   title="GCWM — featured video"
                 />
+                {/* HUD encima */}
+                <div className="absolute inset-0 bg-black/30 eva-scanline" />
+                <div className="absolute inset-0 eva-grid-bg opacity-20" />
+                <div className="relative flex h-full flex-col justify-between p-6 md:p-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 rounded-sm border border-[var(--eva-orange)]/40 bg-black/50 px-3 py-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[var(--eva-orange)] eva-pulse" />
+                      <span className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-orange)]">REC ▸ destacado</span>
+                    </div>
+                    <PlayCircle className="h-7 w-7 text-[var(--eva-green)]" />
+                  </div>
+
+                  <div>
+                    <p className="mb-3 font-mono-tech text-[11px] uppercase tracking-[0.25em] text-[var(--eva-green)]">
+                      Curso gratuito · Tech Props
+                    </p>
+                    <h2 className="font-display text-3xl leading-none text-white drop-shadow-[0_0_20px_rgba(168,255,96,0.3)] md:text-5xl">
+                      Forjá tu primer <br />
+                      <span className="text-[var(--eva-green)]">prop con LEDs</span>
+                    </h2>
+                    <p className="mt-3 max-w-sm text-sm leading-6 text-slate-300">
+                      Luces, materiales, magia visual y armado paso a paso.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => openCategory("electronica")}
+                    className="flex w-fit items-center gap-2 rounded-sm bg-[var(--eva-green)] px-4 py-3 font-mono-tech text-[11px] font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white"
+                  >
+                    <PlayCircle className="h-4 w-4" />
+                    Reproducir
+                  </button>
+                </div>
               </div>
             </div>
 
