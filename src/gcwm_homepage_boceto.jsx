@@ -1043,13 +1043,7 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart, onOpenSear
             <DisciplinesMenu openCategory={openCategory} isCategoryActive={page === "category"} />
             {navButton("shop", "Tienda")}
             {navButton("professionals", "Profesionales")}
-            <button
-              type="button"
-              onClick={() => setPage("home")}
-              className="font-mono-tech text-xs uppercase tracking-[0.2em] text-slate-400 transition-colors hover:text-[var(--eva-green)]"
-            >
-              Comunidad
-            </button>
+            {navButton("community", "Comunidad")}
             <button
               type="button"
               onClick={onOpenBuild}
@@ -1187,6 +1181,19 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart, onOpenSear
                 )}
               >
                 Profesionales
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPage("community")}
+                className={cn(
+                  "flex w-full items-center rounded-sm px-4 py-3 font-mono-tech text-xs uppercase tracking-[0.2em] transition",
+                  page === "community"
+                    ? "bg-[var(--eva-green)]/10 text-[var(--eva-green)]"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                Comunidad
               </button>
 
               <button
@@ -3910,9 +3917,126 @@ function getStateFromHash() {
     };
   }
   return {
-    page: ["home", "shop", "professionals"].includes(h) ? h : "home",
+    page: ["home", "shop", "professionals", "community"].includes(h) ? h : "home",
     category: "pelucas",
   };
+}
+
+// ═══════════════════════════════════════════════════════
+// COMUNIDAD — dashboard "próximamente"
+// ═══════════════════════════════════════════════════════
+function CommunityPage() {
+  const features = [
+    {
+      icon: Clock,
+      label: "Eventos",
+      desc: "Convenciones, meet-ups y actividades cosplay en Argentina.",
+      color: "text-[var(--eva-green)]",
+      border: "border-[var(--eva-green)]/20",
+      bg: "bg-[var(--eva-green)]/5",
+    },
+    {
+      icon: ShoppingBag,
+      label: "Stores",
+      desc: "Tiendas oficiales y vendedores de materiales e insumos.",
+      color: "text-[var(--eva-orange)]",
+      border: "border-[var(--eva-orange)]/20",
+      bg: "bg-[var(--eva-orange)]/5",
+    },
+    {
+      icon: Zap,
+      label: "Emprendimientos",
+      desc: "Proyectos y marcas emergentes dentro del mundo cosplay.",
+      color: "text-[var(--eva-purple)]",
+      border: "border-[var(--eva-purple)]/20",
+      bg: "bg-[var(--eva-purple)]/5",
+    },
+    {
+      icon: Sparkles,
+      label: "Artistas",
+      desc: "Ilustradores, diseñadores y creadores de contenido.",
+      color: "text-[var(--eva-green)]",
+      border: "border-[var(--eva-green)]/20",
+      bg: "bg-[var(--eva-green)]/5",
+    },
+    {
+      icon: Users,
+      label: "Cosplayers",
+      desc: "Perfiles de la comunidad: builds, fotos y proyectos.",
+      color: "text-[var(--eva-orange)]",
+      border: "border-[var(--eva-orange)]/20",
+      bg: "bg-[var(--eva-orange)]/5",
+    },
+    {
+      icon: Wand2,
+      label: "Novedades",
+      desc: "Anuncios, lanzamientos y actualizaciones de la plataforma.",
+      color: "text-[var(--eva-purple)]",
+      border: "border-[var(--eva-purple)]/20",
+      bg: "bg-[var(--eva-purple)]/5",
+    },
+  ];
+
+  return (
+    <section className="relative z-10 mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-24">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <p className="font-mono-tech text-[11px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ gcwm_network</p>
+        <h1 className="mt-2 font-display text-5xl tracking-tight text-white md:text-7xl">Comunidad</h1>
+        <p className="mt-4 max-w-lg text-sm leading-7 text-slate-400">
+          El espacio donde se va a reunir todo el ecosistema cosplay argentino. Esto es lo que está por venir.
+        </p>
+      </motion.div>
+
+      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {features.map((f, i) => {
+          const Icon = f.icon;
+          return (
+            <motion.div
+              key={f.label}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.07 }}
+              className={cn("relative overflow-hidden rounded-sm border p-6", f.border, f.bg)}
+            >
+              <div className="pointer-events-none absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-current opacity-30" />
+              <div className="pointer-events-none absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-current opacity-30" />
+              <div className={cn("mb-4 flex h-12 w-12 items-center justify-center rounded-sm border", f.border)}>
+                <Icon className={cn("h-6 w-6", f.color)} />
+              </div>
+              <h3 className="font-display text-2xl text-white">{f.label}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">{f.desc}</p>
+              <div className="mt-5">
+                <span className="rounded-sm border border-white/10 bg-black/40 px-2.5 py-1 font-mono-tech text-[9px] uppercase tracking-[0.2em] text-slate-500">
+                  Próximamente
+                </span>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="mt-10 flex flex-col items-start gap-4 rounded-sm border border-[var(--eva-green)]/20 bg-[var(--eva-green)]/5 p-8 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ en desarrollo</p>
+          <p className="mt-1 font-display text-2xl text-white">¿Querés formar parte?</p>
+          <p className="mt-1 text-sm text-slate-400">Avisanos por WhatsApp y te sumamos cuando abramos cada sección.</p>
+        </div>
+        <a
+          href={`https://wa.me/${WHATSAPP_NUMBER}`}
+          target="_blank"
+          rel="noreferrer"
+          className="shrink-0 rounded-sm bg-[var(--eva-green)] px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white"
+        >
+          Avisame ▸
+        </a>
+      </motion.div>
+    </section>
+  );
 }
 
 export default function GCWMHomepageMockup() {
@@ -4010,6 +4134,7 @@ export default function GCWMHomepageMockup() {
       {page === "shop" && <ShopPage cart={cart} setCart={setCart} wishlist={wishlist} toggleWishlist={toggleWishlist} />}
       {page === "professionals" && <ProfessionalsPage />}
       {page === "category" && <CategoryPage activeCategoryId={activeCategory} setPage={changePage} openCategory={openCategory} />}
+      {page === "community" && <CommunityPage />}
       <Footer setPage={changePage} />
       <SubscriptionModal />
       {cartOpen && <CartModal cart={cart} setCart={setCart} onClose={() => setCartOpen(false)} wishlist={wishlist} toggleWishlist={toggleWishlist} />}
