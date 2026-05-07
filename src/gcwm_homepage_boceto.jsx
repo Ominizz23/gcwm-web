@@ -29,6 +29,7 @@ import { categories, getCategory } from "./data/categories";
 import { tutorials } from "./data/tutorials";
 import { products as shopItems } from "./data/products";
 import { professionals } from "./data/professionals";
+import { characters } from "./data/characters";
 
 // ───────────────────────────────────────────────────────
 // Configuración del negocio
@@ -3243,8 +3244,26 @@ function EventCountdown() {
 // ═══════════════════════════════════════════════════════
 // BUILD WIZARD — asistente "Armá tu build"
 // ═══════════════════════════════════════════════════════
+function difficultyBadge(difficulty) {
+  if (difficulty === "Fácil") return "bg-[var(--eva-green)]/15 text-[var(--eva-green)]";
+  if (difficulty === "Medio") return "bg-[var(--eva-orange)]/15 text-[var(--eva-orange)]";
+  if (difficulty === "Avanzado") return "bg-[var(--eva-purple)]/30 text-violet-300";
+  return "bg-red-500/15 text-red-400";
+}
+
+function archetypeIcon(id) {
+  if (id === "armored") return Zap;
+  if (id === "fabric") return Scissors;
+  if (id === "tech") return Wand2;
+  if (id === "fantasy") return Sparkles;
+  return Users;
+}
+
 function BuildWizard({ onClose, setPage, openCategory }) {
   const [step, setStep] = useState(1);
+  const [charQuery, setCharQuery] = useState("");
+  const [selectedChar, setSelectedChar] = useState(null);
+  const [useArchetype, setUseArchetype] = useState(false);
   const [archetype, setArchetype] = useState(null);
   const [selectedCats, setSelectedCats] = useState(new Set());
 
@@ -3256,9 +3275,27 @@ function BuildWizard({ onClose, setPage, openCategory }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  function chooseArchetype(arch) {
+  const filteredChars = useMemo(() => {
+    const q = charQuery.trim().toLowerCase();
+    if (!q) return characters;
+    return characters.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.franchise.toLowerCase().includes(q)
+    );
+  }, [charQuery]);
+
+  function selectCharacter(char) {
+    setSelectedChar(char);
+    setSelectedCats(new Set(char.tags));
+    setUseArchetype(false);
+    setStep(2);
+  }
+
+  function selectArchetype(arch) {
     setArchetype(arch);
     setSelectedCats(new Set(arch.categories));
+    setSelectedChar(null);
     setStep(2);
   }
 
@@ -3269,6 +3306,14 @@ function BuildWizard({ onClose, setPage, openCategory }) {
       else next.add(catId);
       return next;
     });
+  }
+
+  function goToArchetypeMode() {
+    setUseArchetype(true);
+    setSelectedChar(null);
+    setArchetype(null);
+    setSelectedCats(new Set());
+    setStep(2);
   }
 
   const recommendedProducts = useMemo(() => {
@@ -3283,20 +3328,16 @@ function BuildWizard({ onClose, setPage, openCategory }) {
     return professionals.filter((p) => selectedCats.has(p.category)).slice(0, 4);
   }, [selectedCats]);
 
+  const recommendedTutorials = useMemo(() => {
+    if (!selectedCats.size) return [];
+    return tutorials.filter((t) => selectedCats.has(t.category)).slice(0, 4);
+  }, [selectedCats]);
+
   const prices = recommendedProducts.map((i) => i.price);
   const minPrice = prices.length ? Math.min(...prices) : 0;
   const maxPrice = prices.length ? Math.round(Math.min(...prices) * 2.2) : 0;
 
-  const archetypeIcon = (id) => {
-    if (id === "armored") return Zap;
-    if (id === "fabric") return Scissors;
-    if (id === "tech") return Wand2;
-    if (id === "fantasy") return Sparkles;
-    return Users;
-  };
-
-  const stepTitles = ["Elegí tu arquetipo", "Seleccioná categorías", "Tu build"];
-  const progressWidths = ["33%", "66%", "100%"];
+  const stepTitles = ["¿A quién querés hacer?", "Tu breakdown", "Tu build"];
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
@@ -3317,7 +3358,7 @@ function BuildWizard({ onClose, setPage, openCategory }) {
         <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
         <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
 
-        {/* Progress bar */}
+        {/* Progress bar — 3 segmentos */}
         <div className="flex h-1 w-full overflow-hidden">
           {[1, 2, 3].map((s) => (
             <div
@@ -3346,26 +3387,87 @@ function BuildWizard({ onClose, setPage, openCategory }) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
+
+          {/* ── STEP 1: búsqueda de personaje ── */}
           {step === 1 && (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {BUILD_ARCHETYPES.map((arch) => {
-                const Icon = archetypeIcon(arch.id);
-                return (
-                  <button
-                    key={arch.id}
-                    type="button"
-                    onClick={() => chooseArchetype(arch)}
-                    className="group flex flex-col items-start gap-3 rounded-sm border border-white/5 bg-black/40 p-4 text-left transition hover:border-[var(--eva-green)]/40 hover:bg-[var(--eva-green)]/5"
-                  >
-                    <div className="grid h-10 w-10 place-items-center rounded-sm border border-[var(--eva-green)]/30 bg-[var(--eva-green)]/10">
-                      <Icon className="h-5 w-5 text-[var(--eva-green)]" />
+            <div className="flex flex-col gap-4">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="text"
+                  value={charQuery}
+                  onChange={(e) => setCharQuery(e.target.value)}
+                  placeholder="Buscar personaje..."
+                  className="w-full rounded-sm border border-white/10 bg-black/40 py-3 pl-10 pr-4 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 transition focus:border-[var(--eva-green)]/50"
+                  autoFocus
+                />
+              </div>
+
+              {filteredChars.length > 0 ? (
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredChars.map((char) => (
+                    <button
+                      key={char.id}
+                      type="button"
+                      onClick={() => selectCharacter(char)}
+                      className="group flex flex-col items-start gap-2 rounded-sm border border-white/5 bg-black/40 p-3 text-left transition hover:border-[var(--eva-green)]/40 hover:bg-[var(--eva-green)]/5"
+                    >
+                      <div className="flex w-full items-start justify-between gap-2">
+                        <p className="font-display text-base leading-tight text-white">{char.name}</p>
+                        <span className={cn("shrink-0 rounded-sm px-2 py-0.5 font-mono-tech text-[9px] uppercase tracking-wider", difficultyBadge(char.difficulty))}>
+                          {char.difficulty}
+                        </span>
+                      </div>
+                      <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500 line-clamp-1">{char.franchise}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {char.tags.map((catId) => {
+                          const cat = getCategory(catId);
+                          return (
+                            <span key={catId} className={cn("rounded-sm px-2 py-0.5 font-mono-tech text-[9px] uppercase tracking-wider", cat.bg, cat.text)}>
+                              {cat.shortLabel}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center font-mono-tech text-xs uppercase tracking-wider text-slate-500 py-4">
+                  Sin resultados para "{charQuery}"
+                </p>
+              )}
+
+              <div className="border-t border-white/5 pt-3">
+                <button
+                  type="button"
+                  onClick={goToArchetypeMode}
+                  className="w-full rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:border-[var(--eva-green)]/30 hover:text-[var(--eva-green)]"
+                >
+                  ¿No está tu personaje? → Elegir por tipo de cosplay
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── STEP 2: breakdown del personaje o selección de arquetipo ── */}
+          {step === 2 && (
+            <div className="space-y-4">
+
+              {/* Modo personaje: mostrar info del personaje + toggles de categoría */}
+              {selectedChar && (
+                <>
+                  {/* Header del personaje */}
+                  <div className="rounded-sm border border-[var(--eva-green)]/20 bg-[var(--eva-green)]/5 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-display text-2xl text-white">{selectedChar.name}</h3>
+                      <span className={cn("rounded-sm px-2 py-0.5 font-mono-tech text-[9px] uppercase tracking-wider", difficultyBadge(selectedChar.difficulty))}>
+                        {selectedChar.difficulty}
+                      </span>
                     </div>
-                    <div>
-                      <p className="font-display text-base text-white">{arch.label}</p>
-                      <p className="mt-1 text-xs leading-5 text-slate-400">{arch.desc}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {arch.categories.map((catId) => {
+                    <p className="mt-1 font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{selectedChar.franchise}</p>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {selectedChar.tags.map((catId) => {
                         const cat = getCategory(catId);
                         return (
                           <span key={catId} className={cn("rounded-sm px-2 py-0.5 font-mono-tech text-[9px] uppercase tracking-wider", cat.bg, cat.text)}>
@@ -3374,60 +3476,155 @@ function BuildWizard({ onClose, setPage, openCategory }) {
                         );
                       })}
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                  </div>
 
-          {step === 2 && (
-            <div className="space-y-4">
-              <p className="text-sm text-slate-400">Basado en tu arquetipo. Podés ajustar las categorías.</p>
-              <div className="grid grid-cols-2 gap-3">
-                {categories.map((cat) => {
-                  const Icon = cat.icon;
-                  const active = selectedCats.has(cat.id);
-                  return (
+                  {/* Lo que vas a necesitar */}
+                  <div>
+                    <p className="mb-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ lo que vas a necesitar</p>
+                    <ul className="space-y-1.5">
+                      {selectedChar.highlights.map((h, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--eva-green)]" />
+                          {h}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Consejo clave */}
+                  <div className="rounded-sm border border-[var(--eva-orange)]/30 bg-[var(--eva-orange)]/5 p-4">
+                    <p className="mb-1.5 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-orange)]">▸ consejo clave</p>
+                    <p className="text-sm leading-6 text-slate-300">{selectedChar.tip}</p>
+                  </div>
+
+                  {/* Materiales clave */}
+                  <div>
+                    <p className="mb-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ materiales clave</p>
+                    <ul className="space-y-1.5">
+                      {selectedChar.materials.map((m, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--eva-orange)]" />
+                          {m}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              )}
+
+              {/* Modo arquetipo: si no se eligió arquetipo aún, mostrar la grilla */}
+              {useArchetype && !archetype && (
+                <>
+                  <p className="text-sm text-slate-400">Elegí el tipo de cosplay que querés armar.</p>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {BUILD_ARCHETYPES.map((arch) => {
+                      const Icon = archetypeIcon(arch.id);
+                      return (
+                        <button
+                          key={arch.id}
+                          type="button"
+                          onClick={() => selectArchetype(arch)}
+                          className="group flex flex-col items-start gap-3 rounded-sm border border-white/5 bg-black/40 p-4 text-left transition hover:border-[var(--eva-green)]/40 hover:bg-[var(--eva-green)]/5"
+                        >
+                          <div className="grid h-10 w-10 place-items-center rounded-sm border border-[var(--eva-green)]/30 bg-[var(--eva-green)]/10">
+                            <Icon className="h-5 w-5 text-[var(--eva-green)]" />
+                          </div>
+                          <div>
+                            <p className="font-display text-base text-white">{arch.label}</p>
+                            <p className="mt-1 text-xs leading-5 text-slate-400">{arch.desc}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {arch.categories.map((catId) => {
+                              const cat = getCategory(catId);
+                              return (
+                                <span key={catId} className={cn("rounded-sm px-2 py-0.5 font-mono-tech text-[9px] uppercase tracking-wider", cat.bg, cat.text)}>
+                                  {cat.label}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Mostrar toggles de categoría cuando hay personaje seleccionado o arquetipo elegido */}
+              {(selectedChar || (useArchetype && archetype)) && (
+                <>
+                  <div>
+                    <p className="mb-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-slate-500">▸ ajustá las categorías</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {categories.map((cat) => {
+                        const Icon = cat.icon;
+                        const active = selectedCats.has(cat.id);
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => toggleCat(cat.id)}
+                            className={cn(
+                              "flex items-center gap-3 rounded-sm border p-3 text-left transition",
+                              active ? cn(cat.border, cat.bg) : "border-white/5 bg-black/40 hover:border-white/20"
+                            )}
+                          >
+                            <Icon className={cn("h-5 w-5 shrink-0", active ? cat.text : "text-slate-500")} />
+                            <div>
+                              <p className="font-display text-base text-white">{cat.label}</p>
+                              <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{cat.shortLabel}</p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
                     <button
-                      key={cat.id}
                       type="button"
-                      onClick={() => toggleCat(cat.id)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-sm border p-4 text-left transition",
-                        active ? cn(cat.border, cat.bg) : "border-white/5 bg-black/40 hover:border-white/20"
-                      )}
+                      onClick={() => setStep(1)}
+                      className="flex-1 rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
                     >
-                      <Icon className={cn("h-5 w-5 shrink-0", active ? cat.text : "text-slate-500")} />
-                      <div>
-                        <p className="font-display text-base text-white">{cat.label}</p>
-                        <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{cat.shortLabel}</p>
-                      </div>
+                      ← Atrás
                     </button>
-                  );
-                })}
-              </div>
-              <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      disabled={selectedCats.size === 0}
+                      onClick={() => setStep(3)}
+                      className="flex-[1.5] rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:opacity-40"
+                    >
+                      Ver recomendaciones ▸
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Mientras no hay arquetipo elegido en modo fallback, solo mostrar el botón volver */}
+              {useArchetype && !archetype && (
                 <button
                   type="button"
-                  onClick={() => setStep(1)}
-                  className="flex-1 rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
+                  onClick={() => { setUseArchetype(false); setStep(1); }}
+                  className="w-full rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
                 >
-                  ← Volver
+                  ← Volver a búsqueda
                 </button>
-                <button
-                  type="button"
-                  disabled={selectedCats.size === 0}
-                  onClick={() => setStep(3)}
-                  className="flex-[1.5] rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:opacity-40"
-                >
-                  Ver mi build ▸
-                </button>
-              </div>
+              )}
             </div>
           )}
 
+          {/* ── STEP 3: recomendaciones ── */}
           {step === 3 && (
             <div className="space-y-5">
+
+              {/* Consejo del personaje como callout en el tope */}
+              {selectedChar && (
+                <div className="rounded-sm border border-[var(--eva-orange)]/30 bg-[var(--eva-orange)]/5 p-4">
+                  <p className="mb-1 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-orange)]">▸ consejo para {selectedChar.name}</p>
+                  <p className="text-xs leading-5 text-slate-300">{selectedChar.tip}</p>
+                </div>
+              )}
+
               {/* Presupuesto estimado */}
               <div className="rounded-sm border border-[var(--eva-orange)]/30 bg-[var(--eva-orange)]/5 p-4">
                 <p className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-[var(--eva-orange)]">▸ presupuesto estimado</p>
@@ -3478,6 +3675,41 @@ function BuildWizard({ onClose, setPage, openCategory }) {
                             <p className="line-clamp-1 text-xs font-bold text-white">{pro.name}</p>
                             <p className="font-mono-tech text-[9px] uppercase tracking-wider text-[var(--eva-orange)]">★ {pro.rating}</p>
                           </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Tutoriales relacionados */}
+              {recommendedTutorials.length > 0 && (
+                <div>
+                  <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ tutoriales relacionados</p>
+                  <div className="space-y-2">
+                    {recommendedTutorials.map((tut, i) => {
+                      const cat = getCategory(tut.category);
+                      return (
+                        <div key={i} className="flex items-center gap-3 rounded-sm border border-white/5 bg-black/40 p-3">
+                          <div className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-sm bg-gradient-to-br", cat.color)}>
+                            <PlayCircle className="h-4 w-4 text-white" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="line-clamp-1 text-sm font-bold text-white">{tut.title}</p>
+                            <p className="font-mono-tech text-[10px] uppercase tracking-wider text-slate-500">{tut.teacher} · {tut.duration}</p>
+                          </div>
+                          {tut.youtubeId ? (
+                            <a
+                              href={`https://www.youtube.com/watch?v=${tut.youtubeId}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="shrink-0 font-mono-tech text-[9px] uppercase tracking-wider text-[var(--eva-green)] hover:underline"
+                            >
+                              Ver ▸
+                            </a>
+                          ) : (
+                            <span className="shrink-0 font-mono-tech text-[9px] uppercase tracking-wider text-slate-600">Pronto</span>
+                          )}
                         </div>
                       );
                     })}
