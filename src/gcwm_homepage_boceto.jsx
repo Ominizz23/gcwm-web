@@ -3925,57 +3925,33 @@ function getStateFromHash() {
 // ═══════════════════════════════════════════════════════
 // COMUNIDAD — dashboard "próximamente"
 // ═══════════════════════════════════════════════════════
+const COMMUNITY_CATEGORIES = [
+  "Stand", "Evento", "Cosplayer", "Artista", "Cosmaker", "Wigmaker", "Propmaker",
+];
+
 function CommunityPage() {
   const features = [
-    {
-      icon: Clock,
-      label: "Eventos",
-      desc: "Convenciones, meet-ups y actividades cosplay en Argentina.",
-      color: "text-[var(--eva-green)]",
-      border: "border-[var(--eva-green)]/20",
-      bg: "bg-[var(--eva-green)]/5",
-    },
-    {
-      icon: ShoppingBag,
-      label: "Stores",
-      desc: "Tiendas oficiales y vendedores de materiales e insumos.",
-      color: "text-[var(--eva-orange)]",
-      border: "border-[var(--eva-orange)]/20",
-      bg: "bg-[var(--eva-orange)]/5",
-    },
-    {
-      icon: Zap,
-      label: "Emprendimientos",
-      desc: "Proyectos y marcas emergentes dentro del mundo cosplay.",
-      color: "text-[var(--eva-purple)]",
-      border: "border-[var(--eva-purple)]/20",
-      bg: "bg-[var(--eva-purple)]/5",
-    },
-    {
-      icon: Sparkles,
-      label: "Artistas",
-      desc: "Ilustradores, diseñadores y creadores de contenido.",
-      color: "text-[var(--eva-green)]",
-      border: "border-[var(--eva-green)]/20",
-      bg: "bg-[var(--eva-green)]/5",
-    },
-    {
-      icon: Users,
-      label: "Cosplayers",
-      desc: "Perfiles de la comunidad: builds, fotos y proyectos.",
-      color: "text-[var(--eva-orange)]",
-      border: "border-[var(--eva-orange)]/20",
-      bg: "bg-[var(--eva-orange)]/5",
-    },
-    {
-      icon: Wand2,
-      label: "Novedades",
-      desc: "Anuncios, lanzamientos y actualizaciones de la plataforma.",
-      color: "text-[var(--eva-purple)]",
-      border: "border-[var(--eva-purple)]/20",
-      bg: "bg-[var(--eva-purple)]/5",
-    },
+    { icon: Clock,     label: "Eventos",        desc: "Convenciones, meet-ups y actividades cosplay en Argentina.", color: "text-[var(--eva-green)]",  border: "border-[var(--eva-green)]/20",  bg: "bg-[var(--eva-green)]/5" },
+    { icon: ShoppingBag, label: "Stores",        desc: "Tiendas oficiales y vendedores de materiales e insumos.",   color: "text-[var(--eva-orange)]", border: "border-[var(--eva-orange)]/20", bg: "bg-[var(--eva-orange)]/5" },
+    { icon: Zap,       label: "Emprendimientos", desc: "Proyectos y marcas emergentes dentro del mundo cosplay.",   color: "text-[var(--eva-purple)]", border: "border-[var(--eva-purple)]/20", bg: "bg-[var(--eva-purple)]/5" },
+    { icon: Sparkles,  label: "Artistas",        desc: "Ilustradores, diseñadores y creadores de contenido.",       color: "text-[var(--eva-green)]",  border: "border-[var(--eva-green)]/20",  bg: "bg-[var(--eva-green)]/5" },
+    { icon: Users,     label: "Cosplayers",      desc: "Perfiles de la comunidad: builds, fotos y proyectos.",      color: "text-[var(--eva-orange)]", border: "border-[var(--eva-orange)]/20", bg: "bg-[var(--eva-orange)]/5" },
+    { icon: Wand2,     label: "Novedades",       desc: "Anuncios, lanzamientos y actualizaciones de la plataforma.", color: "text-[var(--eva-purple)]", border: "border-[var(--eva-purple)]/20", bg: "bg-[var(--eva-purple)]/5" },
   ];
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [category, setCategory] = useState("");
+  const [name, setName] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | sending | success
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!category || !name.trim()) return;
+    setStatus("sending");
+    await sendSubscription({ name: name.trim(), instagram: instagram.trim(), source: `community-${category.toLowerCase()}` });
+    setStatus("success");
+  }
 
   return (
     <section className="relative z-10 mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-24">
@@ -4015,25 +3991,111 @@ function CommunityPage() {
         })}
       </div>
 
+      {/* CTA con formulario inline */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.5 }}
-        className="mt-10 flex flex-col items-start gap-4 rounded-sm border border-[var(--eva-green)]/20 bg-[var(--eva-green)]/5 p-8 sm:flex-row sm:items-center sm:justify-between"
+        className="mt-10 rounded-sm border border-[var(--eva-green)]/20 bg-[var(--eva-green)]/5"
       >
-        <div>
-          <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ en desarrollo</p>
-          <p className="mt-1 font-display text-2xl text-white">¿Querés formar parte?</p>
-          <p className="mt-1 text-sm text-slate-400">Avisanos por WhatsApp y te sumamos cuando abramos cada sección.</p>
+        {/* Header del CTA */}
+        <div className="flex flex-col items-start gap-4 p-8 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ en desarrollo</p>
+            <p className="mt-1 font-display text-2xl text-white">¿Querés formar parte?</p>
+            <p className="mt-1 text-sm text-slate-400">Dejanos tus datos y te avisamos cuando abramos tu sección.</p>
+          </div>
+          {!formOpen && status !== "success" && (
+            <button
+              type="button"
+              onClick={() => setFormOpen(true)}
+              className="shrink-0 rounded-sm bg-[var(--eva-green)] px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white"
+            >
+              Avisame ▸
+            </button>
+          )}
         </div>
-        <a
-          href={`https://wa.me/${WHATSAPP_NUMBER}`}
-          target="_blank"
-          rel="noreferrer"
-          className="shrink-0 rounded-sm bg-[var(--eva-green)] px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white"
-        >
-          Avisame ▸
-        </a>
+
+        {/* Formulario animado */}
+        {formOpen && status !== "success" && (
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            onSubmit={handleSubmit}
+            className="border-t border-[var(--eva-green)]/10 px-8 pb-8 pt-6"
+          >
+            {/* Categoría */}
+            <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ soy…</p>
+            <div className="mb-5 flex flex-wrap gap-2">
+              {COMMUNITY_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={cn(
+                    "rounded-sm border px-3 py-1.5 font-mono-tech text-[11px] uppercase tracking-[0.15em] transition",
+                    category === cat
+                      ? "border-[var(--eva-green)] bg-[var(--eva-green)] text-black"
+                      : "border-white/10 bg-black/40 text-slate-400 hover:border-[var(--eva-green)]/40 hover:text-white"
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {/* Nombre e Instagram */}
+            <div className="mb-4 grid gap-3 sm:grid-cols-2">
+              <input
+                type="text"
+                placeholder="Nombre o alias *"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="rounded-sm border border-white/10 bg-black/40 px-4 py-3 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 transition focus:border-[var(--eva-green)]/50"
+              />
+              <input
+                type="text"
+                placeholder="@instagram (opcional)"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                className="rounded-sm border border-white/10 bg-black/40 px-4 py-3 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 transition focus:border-[var(--eva-green)]/50"
+              />
+            </div>
+
+            {/* Acciones */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setFormOpen(false)}
+                className="rounded-sm border border-white/10 bg-black/40 px-4 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={!category || !name.trim() || status === "sending"}
+                className="flex-1 rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:opacity-40"
+              >
+                {status === "sending" ? "Enviando…" : "Enviar ▸"}
+              </button>
+            </div>
+          </motion.form>
+        )}
+
+        {/* Estado success */}
+        {status === "success" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="border-t border-[var(--eva-green)]/10 px-8 pb-8 pt-6"
+          >
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ recibido</p>
+            <p className="mt-2 font-display text-xl text-white">¡Listo, {name}!</p>
+            <p className="mt-1 text-sm text-slate-400">Te avisamos cuando abramos la sección de <span className="text-white">{category}</span>.</p>
+          </motion.div>
+        )}
       </motion.div>
     </section>
   );
