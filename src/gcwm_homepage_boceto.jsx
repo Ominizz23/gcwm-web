@@ -3942,14 +3942,15 @@ function CommunityPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [category, setCategory] = useState("");
   const [name, setName] = useState("");
-  const [instagram, setInstagram] = useState("");
+  const [email, setInstagram] = useState("");
+  const [igHandle, setIgHandle] = useState("");
   const [status, setStatus] = useState("idle"); // idle | sending | success
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!category || !name.trim()) return;
+    if (!category || !name.trim() || !email.trim()) return;
     setStatus("sending");
-    await sendSubscription({ name: name.trim(), instagram: instagram.trim(), source: `community-${category.toLowerCase()}` });
+    await sendSubscription({ name: name.trim(), instagram: igHandle.trim(), email: email.trim(), source: `community-${category.toLowerCase()}` });
     setStatus("success");
   }
 
@@ -4056,11 +4057,21 @@ function CommunityPage() {
                 className="rounded-sm border border-white/10 bg-black/40 px-4 py-3 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 transition focus:border-[var(--eva-green)]/50"
               />
               <input
-                type="text"
-                placeholder="@instagram (opcional)"
+                type="email"
+                placeholder="Email *"
                 value={instagram}
                 onChange={(e) => setInstagram(e.target.value)}
+                required
                 className="rounded-sm border border-white/10 bg-black/40 px-4 py-3 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 transition focus:border-[var(--eva-green)]/50"
+              />
+            </div>
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="@instagram (opcional)"
+                value={igHandle}
+                onChange={(e) => setIgHandle(e.target.value)}
+                className="w-full rounded-sm border border-white/10 bg-black/40 px-4 py-3 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 transition focus:border-[var(--eva-green)]/50"
               />
             </div>
 
@@ -4075,7 +4086,7 @@ function CommunityPage() {
               </button>
               <button
                 type="submit"
-                disabled={!category || !name.trim() || status === "sending"}
+                disabled={!category || !name.trim() || !email.trim() || status === "sending"}
                 className="flex-1 rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:opacity-40"
               >
                 {status === "sending" ? "Enviando…" : "Enviar ▸"}
