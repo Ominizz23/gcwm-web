@@ -3993,12 +3993,7 @@ function CommunityPage() {
       </div>
 
       {/* CTA con formulario inline */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="mt-10 rounded-sm border border-[var(--eva-green)]/20 bg-[var(--eva-green)]/5"
-      >
+      <div className="mt-10 rounded-sm border border-[var(--eva-green)]/20 bg-[var(--eva-green)]/5">
         {/* Header del CTA */}
         <div className="flex flex-col items-start gap-4 p-8 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -4017,12 +4012,9 @@ function CommunityPage() {
           )}
         </div>
 
-        {/* Formulario animado */}
+        {/* Formulario */}
         {formOpen && status !== "success" && (
-          <motion.form
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          <form
             onSubmit={handleSubmit}
             className="border-t border-[var(--eva-green)]/10 px-8 pb-8 pt-6"
           >
@@ -4092,22 +4084,18 @@ function CommunityPage() {
                 {status === "sending" ? "Enviando…" : "Enviar ▸"}
               </button>
             </div>
-          </motion.form>
+          </form>
         )}
 
         {/* Estado success */}
         {status === "success" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="border-t border-[var(--eva-green)]/10 px-8 pb-8 pt-6"
-          >
+          <div className="border-t border-[var(--eva-green)]/10 px-8 pb-8 pt-6">
             <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ recibido</p>
             <p className="mt-2 font-display text-xl text-white">¡Listo, {name}!</p>
             <p className="mt-1 text-sm text-slate-400">Te avisamos cuando abramos la sección de <span className="text-white">{category}</span>.</p>
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+      </div>
     </section>
   );
 }
