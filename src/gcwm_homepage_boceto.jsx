@@ -180,7 +180,7 @@ function SubscriptionModal() {
       {/* Backdrop (no cierra al click — solo bloquea el contenido detrás) */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-black/85"
       />
 
       {/* Modal */}
@@ -1428,7 +1428,7 @@ function HomePage({ setPage, openCategory }) {
 
       {/* TUTORIALES DESTACADOS */}
       <section className="relative z-10 mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-24">
-        <div className="rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-6 backdrop-blur-xl md:p-10">
+        <div className="rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-6 md:p-10">
           <div className="mb-10 flex flex-col items-start justify-between gap-5 lg:flex-row lg:items-end">
             <div>
               <p className="font-mono-tech text-[11px] uppercase tracking-[0.3em] text-[var(--eva-green)]">
@@ -1563,7 +1563,7 @@ function CategoryPage({ activeCategoryId, setPage, openCategory }) {
       </div>
 
       <div id="categoria-cursos" className="mt-12 grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-        <div className="rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-6 backdrop-blur-xl md:p-8">
+        <div className="rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-6 md:p-8">
           <p className={cn("font-mono-tech text-[11px] uppercase tracking-[0.3em]", category.text)}>▸ cursos</p>
           <h2 className="mt-2 mb-8 font-display text-3xl text-white md:text-4xl">Rutas de aprendizaje</h2>
           <div className="grid gap-5 md:grid-cols-2">
@@ -1573,7 +1573,7 @@ function CategoryPage({ activeCategoryId, setPage, openCategory }) {
           </div>
         </div>
         <div className="space-y-6">
-          <div className="rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-6 backdrop-blur-xl">
+          <div className="rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-6">
             <p className={cn("font-mono-tech text-[11px] uppercase tracking-[0.3em]", category.text)}>▸ shop</p>
             <h3 className="mt-2 font-display text-2xl text-white">Insumos para {category.shortLabel}</h3>
             <div className="mt-5 space-y-2">
@@ -1593,7 +1593,7 @@ function CategoryPage({ activeCategoryId, setPage, openCategory }) {
               ))}
             </div>
           </div>
-          <div className="rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-6 backdrop-blur-xl">
+          <div className="rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-6">
             <p className={cn("font-mono-tech text-[11px] uppercase tracking-[0.3em]", category.text)}>▸ profesionales</p>
             <h3 className="mt-2 font-display text-2xl text-white">Especialistas</h3>
             <div className="mt-5 space-y-3">
@@ -1699,7 +1699,7 @@ function ShopPage({ cart, setCart, wishlist, toggleWishlist }) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[0.7fr_1.45fr_0.85fr]">
-        <aside className="h-fit rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-5 backdrop-blur-xl">
+        <aside className="h-fit rounded-sm border border-white/5 bg-gradient-to-b from-[var(--eva-charcoal)]/60 to-black/60 p-5">
           <p className="mb-4 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ sectores</p>
           <div className="space-y-2">
             <button
@@ -1821,7 +1821,7 @@ function ShopPage({ cart, setCart, wishlist, toggleWishlist }) {
           )}
         </div>
 
-        <aside className="h-fit rounded-sm border border-[var(--eva-green)]/20 bg-gradient-to-b from-[var(--eva-charcoal)] to-black p-5 backdrop-blur-xl">
+        <aside className="h-fit rounded-sm border border-[var(--eva-green)]/20 bg-gradient-to-b from-[var(--eva-charcoal)] to-black p-5">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ pedido</p>
@@ -1941,7 +1941,7 @@ function Lightbox({ images, startIndex, onClose }) {
         type="button"
         aria-label="Cerrar foto"
         onClick={onClose}
-        className="absolute inset-0 bg-black/95 backdrop-blur-md"
+        className="absolute inset-0 bg-black/95"
       />
 
       {/* Contador */}
@@ -2018,7 +2018,7 @@ function GalleryModal({ pro, onClose }) {
           type="button"
           aria-label="Cerrar galería"
           onClick={onClose}
-          className="absolute inset-0 bg-black/85 backdrop-blur-md"
+          className="absolute inset-0 bg-black/90"
         />
 
         {/* Modal */}
@@ -2548,7 +2548,7 @@ function CartModal({ cart, setCart, onClose, wishlist, toggleWishlist }) {
     <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-black/85"
         onClick={onClose}
       />
       <motion.div
@@ -2815,7 +2815,7 @@ function FAQModal({ onClose }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-black/85"
         onClick={onClose}
       />
       <motion.div
@@ -2892,7 +2892,7 @@ function ContactModal({ onClose }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-black/85"
         onClick={onClose}
       />
       <motion.div
@@ -3026,7 +3026,7 @@ function SearchModal({ onClose, setPage, openCategory }) {
     <div className="fixed inset-0 z-[150] flex items-start justify-center pt-20 p-4">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-black/85"
         onClick={onClose}
       />
       <motion.div
@@ -3286,6 +3286,11 @@ function BuildWizard({ onClose, setPage, openCategory }) {
   }, [charQuery]);
 
   function selectCharacter(char) {
+    try {
+      const stats = JSON.parse(localStorage.getItem("gcwm-char-stats") || "{}");
+      stats[char.id] = (stats[char.id] || 0) + 1;
+      localStorage.setItem("gcwm-char-stats", JSON.stringify(stats));
+    } catch {}
     setSelectedChar(char);
     setSelectedCats(new Set(char.tags));
     setUseArchetype(false);
@@ -3309,6 +3314,14 @@ function BuildWizard({ onClose, setPage, openCategory }) {
   }
 
   function goToArchetypeMode() {
+    const q = charQuery.trim().toLowerCase();
+    if (q) {
+      try {
+        const misses = JSON.parse(localStorage.getItem("gcwm-char-misses") || "[]");
+        misses.push(q);
+        localStorage.setItem("gcwm-char-misses", JSON.stringify(misses.slice(-200)));
+      } catch {}
+    }
     setUseArchetype(true);
     setSelectedChar(null);
     setArchetype(null);
@@ -3343,7 +3356,7 @@ function BuildWizard({ onClose, setPage, openCategory }) {
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-black/85"
         onClick={onClose}
       />
       <motion.div
@@ -3399,7 +3412,6 @@ function BuildWizard({ onClose, setPage, openCategory }) {
                   onChange={(e) => setCharQuery(e.target.value)}
                   placeholder="Buscar personaje..."
                   className="w-full rounded-sm border border-white/10 bg-black/40 py-3 pl-10 pr-4 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 transition focus:border-[var(--eva-green)]/50"
-                  autoFocus
                 />
               </div>
 
