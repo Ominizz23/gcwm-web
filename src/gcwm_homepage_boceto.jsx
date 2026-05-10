@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { toPng } from "html-to-image";
+import { toCanvas } from "html-to-image";
 import {
   Camera,
   ChevronDown,
@@ -3993,14 +3993,36 @@ const CELL_BTN = {
 };
 
 function DraggablePhotoCell({ src, transform, onTransformChange, containerStyle }) {
+  const containerRef = useRef(null);
+  const naturalRef = useRef({ w: 0, h: 0 });
+  const [, setLoaded] = useState(false);
+
+  function computeLayout(s) {
+    const el = containerRef.current;
+    if (!el || !naturalRef.current.w) return null;
+    const cW = el.offsetWidth, cH = el.offsetHeight;
+    const iW = naturalRef.current.w, iH = naturalRef.current.h;
+    const coverFactor = Math.max(cW / iW, cH / iH) * s;
+    const rW = iW * coverFactor, rH = iH * coverFactor;
+    const maxX = Math.max(0, (rW - cW) / 2);
+    const maxY = Math.max(0, (rH - cH) / 2);
+    return { cW, cH, rW, rH, maxX, maxY };
+  }
+
   function handlePointerDown(e) {
     if (e.target.closest("[data-no-export]")) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     const startMx = e.clientX, startMy = e.clientY;
     const startTx = transform.x, startTy = transform.y;
+    const s = transform.scale;
     function onMove(ev) {
-      onTransformChange({ x: startTx + (ev.clientX - startMx), y: startTy + (ev.clientY - startMy) });
+      const layout = computeLayout(s);
+      if (!layout) return;
+      const { maxX, maxY } = layout;
+      const newX = Math.max(-maxX, Math.min(maxX, startTx + (ev.clientX - startMx)));
+      const newY = Math.max(-maxY, Math.min(maxY, startTy + (ev.clientY - startMy)));
+      onTransformChange({ x: newX, y: newY });
     }
     function onUp() {
       window.removeEventListener("pointermove", onMove);
@@ -4011,35 +4033,59 @@ function DraggablePhotoCell({ src, transform, onTransformChange, containerStyle 
   }
 
   const s = transform.scale;
-  const pct = s * 100;
-  const off = (100 - pct) / 2;
+  const layout = computeLayout(s);
+  const cW = layout?.cW ?? 0, cH = layout?.cH ?? 0;
+  const rW = layout?.rW ?? 0, rH = layout?.rH ?? 0;
+  const maxX = layout?.maxX ?? 0, maxY = layout?.maxY ?? 0;
+  const canPan = maxX > 0 || maxY > 0;
+  const imgLeft = layout ? (cW - rW) / 2 + transform.x : 0;
+  const imgTop = layout ? (cH - rH) / 2 + transform.y : 0;
+
+  function zoom(delta) {
+    const newS = Math.max(1, Math.min(4, s + delta));
+    const nl = computeLayout(newS);
+    if (nl) {
+      onTransformChange({
+        scale: newS,
+        x: Math.max(-nl.maxX, Math.min(nl.maxX, transform.x)),
+        y: Math.max(-nl.maxY, Math.min(nl.maxY, transform.y)),
+      });
+    } else {
+      onTransformChange({ scale: newS });
+    }
+  }
 
   return (
     <div
-      style={{ ...containerStyle, position: "relative", overflow: "hidden", cursor: "grab" }}
+      ref={containerRef}
+      data-photo-cell="true"
+      style={{ ...containerStyle, position: "relative", overflow: "hidden", cursor: canPan ? "grab" : "default" }}
       onPointerDown={handlePointerDown}
     >
       <img
         src={src} alt="" draggable={false}
+        onLoad={(e) => {
+          naturalRef.current = { w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight };
+          setLoaded(true);
+        }}
         style={{
           position: "absolute",
-          width: `${pct}%`, height: `${pct}%`,
-          left: `${off}%`, top: `${off}%`,
-          objectFit: "cover",
-          transform: `translate(${transform.x}px, ${transform.y}px)`,
+          left: layout ? imgLeft : 0,
+          top: layout ? imgTop : 0,
+          width: layout ? rW : "100%",
+          height: layout ? rH : "100%",
+          objectFit: layout ? "fill" : "cover",
           userSelect: "none", pointerEvents: "none", display: "block",
         }}
       />
       {/* Controles — excluidos del export */}
       <div data-no-export="true" style={{ position: "absolute", top: 5, right: 5, display: "flex", gap: 3, zIndex: 10 }}>
-        <button style={CELL_BTN} title="Zoom +"
-          onClick={(e) => { e.stopPropagation(); onTransformChange({ scale: Math.min(s + 0.25, 4) }); }}>+</button>
-        <button style={CELL_BTN} title="Zoom −"
-          onClick={(e) => { e.stopPropagation(); onTransformChange({ scale: Math.max(s - 0.25, 1) }); }}>−</button>
+        <button style={CELL_BTN} title="Zoom +" onClick={(e) => { e.stopPropagation(); zoom(0.25); }}>+</button>
+        <button style={CELL_BTN} title="Zoom −" onClick={(e) => { e.stopPropagation(); zoom(-0.25); }}>−</button>
         <button style={{ ...CELL_BTN, fontSize: 11 }} title="Resetear"
           onClick={(e) => { e.stopPropagation(); onTransformChange({ scale: 1, x: 0, y: 0 }); }}>↺</button>
       </div>
-      {s > 1 && (
+      {canPan && (
         <div data-no-export="true" style={{
           position: "absolute", bottom: 5, left: "50%", transform: "translateX(-50%)",
           fontSize: 8, color: "rgba(255,255,255,0.5)", fontFamily: "monospace",
@@ -4148,12 +4194,58 @@ function ToolsPage() {
     if (!templateRef.current) return;
     setExporting(true);
     try {
-      const dataUrl = await toPng(templateRef.current, {
-        pixelRatio: 2,
+      const template = templateRef.current;
+      const pixelRatio = 2;
+
+      // Snapshot img positions BEFORE rendering (DOM must be stable)
+      const templateRect = template.getBoundingClientRect();
+      const imgSnapshots = Array.from(template.querySelectorAll("[data-photo-cell] img")).map((img) => {
+        const imgRect = img.getBoundingClientRect();
+        const cellRect = img.closest("[data-photo-cell]").getBoundingClientRect();
+        return { img, imgRect, cellRect };
+      });
+
+      // Render layout without <img> elements (avoids iOS SVG foreignObject bug)
+      const canvas = await toCanvas(template, {
+        pixelRatio,
         cacheBust: true,
         width: TEMPLATE_WIDTH,
-        filter: (node) => typeof node.getAttribute !== "function" || node.getAttribute("data-no-export") !== "true",
+        filter: (node) => {
+          if (typeof node.getAttribute !== "function") return true;
+          if (node.getAttribute("data-no-export") === "true") return false;
+          if (node.tagName === "IMG") return false;
+          return true;
+        },
       });
+
+      // Scale factor: CSS px → canvas px
+      const scale = (TEMPLATE_WIDTH / templateRect.width) * pixelRatio;
+      const ctx = canvas.getContext("2d");
+
+      for (const { img, imgRect, cellRect } of imgSnapshots) {
+        if (!img.complete || !img.naturalWidth) continue;
+
+        // Clip canvas to the cell bounds so overflow stays hidden
+        const cx = (cellRect.left - templateRect.left) * scale;
+        const cy = (cellRect.top - templateRect.top) * scale;
+        const cw = cellRect.width * scale;
+        const ch = cellRect.height * scale;
+
+        // Image destination on canvas
+        const ix = (imgRect.left - templateRect.left) * scale;
+        const iy = (imgRect.top - templateRect.top) * scale;
+        const iw = imgRect.width * scale;
+        const ih = imgRect.height * scale;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(cx, cy, cw, ch);
+        ctx.clip();
+        ctx.drawImage(img, ix, iy, iw, ih);
+        ctx.restore();
+      }
+
+      const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.download = `gcwm-venta-${Date.now()}.png`;
       link.href = dataUrl;
