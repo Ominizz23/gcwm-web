@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { toPng } from "html-to-image";
 import {
   Camera,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   Heart,
   Images,
   Instagram,
@@ -18,9 +20,11 @@ import {
   Search,
   ShoppingBag,
   Sparkles,
+  Tag,
   User,
   Users,
   Wand2,
+  Wrench,
   X,
   Zap,
 } from "lucide-react";
@@ -1038,12 +1042,13 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart, onOpenSear
             </div>
           </button>
 
-          <nav className="hidden items-center gap-8 md:flex">
+          <nav className="hidden items-center gap-5 lg:flex">
             {navButton("home", "Inicio")}
             <DisciplinesMenu openCategory={openCategory} isCategoryActive={page === "category"} />
             {navButton("shop", "Tienda")}
             {navButton("professionals", "Profesionales")}
             {navButton("community", "Comunidad")}
+            {navButton("tools", "Herramientas")}
             <button
               type="button"
               onClick={onOpenBuild}
@@ -1083,14 +1088,14 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart, onOpenSear
               onClick={() => setSyncOpen(true)}
               className="flex items-center gap-2 rounded-lg border border-[var(--eva-green)]/40 bg-[var(--eva-green)]/10 px-2.5 py-2.5 font-mono-tech text-xs uppercase tracking-[0.15em] text-[var(--eva-green)] transition-colors hover:bg-[var(--eva-green)]/20 md:px-4 md:py-2"
             >
-              <Sparkles className="h-4 w-4 md:hidden" />
-              <span className="hidden md:inline">Sync ▸</span>
+              <Sparkles className="h-4 w-4 lg:hidden" />
+              <span className="hidden lg:inline">Sync ▸</span>
             </button>
 
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              className="rounded-lg border border-white/10 bg-black/40 p-2.5 transition-colors hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/5 md:hidden"
+              className="rounded-lg border border-white/10 bg-black/40 p-2.5 transition-colors hover:border-[var(--eva-green)]/50 hover:bg-[var(--eva-green)]/5 lg:hidden"
               aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
             >
               {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -1194,6 +1199,20 @@ function Header({ page, setPage, openCategory, cartCount, onOpenCart, onOpenSear
                 )}
               >
                 Comunidad
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPage("tools")}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-sm px-4 py-3 font-mono-tech text-xs uppercase tracking-[0.2em] transition",
+                  page === "tools"
+                    ? "bg-[var(--eva-green)]/10 text-[var(--eva-green)]"
+                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                )}
+              >
+                <Wrench className="h-4 w-4" />
+                Herramientas
               </button>
 
               <button
@@ -3905,6 +3924,297 @@ function Footer({ setPage }) {
 }
 
 // ═══════════════════════════════════════════════════════
+// TOOLS PAGE — Generador de templates de venta
+// ═══════════════════════════════════════════════════════
+const SALE_CONDITIONS = ["Nuevo", "Como nuevo", "Usado", "Para piezas"];
+
+const CONDITION_STYLE = {
+  "Nuevo":       { bg: "#A8FF60", color: "#000" },
+  "Como nuevo":  { bg: "#7acc44", color: "#000" },
+  "Usado":       { bg: "#FF6B1A", color: "#000" },
+  "Para piezas": { bg: "#dc2626", color: "#fff" },
+};
+
+function ToolsPage() {
+  const [ig, setIg] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [condition, setCondition] = useState("Nuevo");
+  const [photos, setPhotos] = useState([]);
+  const [exporting, setExporting] = useState(false);
+  const templateRef = useRef(null);
+
+  function handlePhotoAdd(e) {
+    const files = Array.from(e.target.files);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setPhotos((prev) => {
+          if (prev.length >= 4) return prev;
+          return [...prev, ev.target.result];
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = "";
+  }
+
+  function removePhoto(index) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  async function handleExport() {
+    if (!templateRef.current) return;
+    setExporting(true);
+    try {
+      const dataUrl = await toPng(templateRef.current, { pixelRatio: 2, cacheBust: true });
+      const link = document.createElement("a");
+      link.download = `gcwm-venta-${Date.now()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Export error:", err);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const formattedPrice = price
+    ? new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(Number(price))
+    : "";
+
+  const cStyle = CONDITION_STYLE[condition];
+  const canExport = photos.length > 0 || price || description;
+
+  return (
+    <section className="relative z-10 mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-24">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <p className="font-mono-tech text-[11px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ gcwm_tools</p>
+        <h1 className="mt-2 font-display text-5xl tracking-tight text-white md:text-7xl">Herramientas</h1>
+        <p className="mt-4 max-w-lg text-sm leading-7 text-slate-400">
+          Generá un template profesional para vender tus materiales, pelucas o piezas en grupos de Facebook e Instagram.
+        </p>
+      </motion.div>
+
+      <div className="mt-12 grid gap-10 lg:grid-cols-2">
+        {/* ── FORMULARIO ── */}
+        <div className="space-y-6">
+          {/* Fotos */}
+          <div>
+            <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">
+              Fotos del producto <span className="text-slate-600">({photos.length}/4)</span>
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {photos.map((url, i) => (
+                <div key={i} className="group relative aspect-square overflow-hidden rounded-sm border border-white/10 bg-black/40">
+                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-sm bg-black/80 text-white opacity-0 transition group-hover:opacity-100 hover:bg-red-600"
+                    aria-label="Eliminar foto"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              {photos.length < 4 && (
+                <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-sm border border-dashed border-white/20 text-slate-500 transition hover:border-[var(--eva-green)]/50 hover:text-[var(--eva-green)]">
+                  <Camera className="h-6 w-6" />
+                  <span className="font-mono-tech text-[9px] uppercase tracking-wider">Agregar</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handlePhotoAdd}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
+          {/* Instagram */}
+          <div>
+            <label className="mb-2 block font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Instagram</label>
+            <div className="flex items-center gap-0 rounded-sm border border-white/10 bg-black/40 focus-within:border-[var(--eva-green)]/40">
+              <span className="pl-3 font-mono-tech text-sm text-slate-500">@</span>
+              <input
+                type="text"
+                value={ig}
+                onChange={(e) => setIg(e.target.value.replace(/^@+/, ""))}
+                placeholder="tu_usuario"
+                className="flex-1 bg-transparent px-2 py-2.5 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600"
+              />
+            </div>
+          </div>
+
+          {/* Precio */}
+          <div>
+            <label className="mb-2 block font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Precio (ARS)</label>
+            <input
+              type="number"
+              min="0"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="15000"
+              className="w-full rounded-sm border border-white/10 bg-black/40 px-3 py-2.5 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 focus:border-[var(--eva-green)]/40"
+            />
+          </div>
+
+          {/* Descripción */}
+          <div>
+            <label className="mb-2 block font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Descripción</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Peluca de Asuka, naranja, usada dos veces, largo hasta la cintura. Acepto contraoferta."
+              rows={4}
+              className="w-full resize-none rounded-sm border border-white/10 bg-black/40 px-3 py-2.5 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 focus:border-[var(--eva-green)]/40"
+            />
+          </div>
+
+          {/* Estado */}
+          <div>
+            <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Estado del producto</p>
+            <div className="flex flex-wrap gap-2">
+              {SALE_CONDITIONS.map((c) => {
+                const s = CONDITION_STYLE[c];
+                const active = condition === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCondition(c)}
+                    style={active ? { backgroundColor: s.bg, color: s.color } : {}}
+                    className={cn(
+                      "rounded-sm px-4 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] transition",
+                      active
+                        ? "font-bold"
+                        : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/30 hover:text-white"
+                    )}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Botón exportar */}
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting || !canExport}
+            className="flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Download className="h-4 w-4" />
+            {exporting ? "Generando imagen..." : "Descargar imagen ▸"}
+          </button>
+        </div>
+
+        {/* ── PREVIEW / TEMPLATE ── */}
+        <div>
+          <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Vista previa del template</p>
+          <div className="overflow-hidden rounded-sm border border-white/10 shadow-2xl shadow-black/60">
+            <div
+              ref={templateRef}
+              style={{ width: "100%", maxWidth: 600, backgroundColor: "#050507", fontFamily: "monospace" }}
+            >
+              {/* GRID DE FOTOS 2×2 */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: "relative",
+                      aspectRatio: "1/1",
+                      overflow: "hidden",
+                      backgroundColor: "#0d0d10",
+                      borderRight: i % 2 === 0 ? "1px solid rgba(168,255,96,0.15)" : "none",
+                      borderBottom: i < 2 ? "1px solid rgba(168,255,96,0.15)" : "none",
+                    }}
+                  >
+                    {photos[i] ? (
+                      <img
+                        src={photos[i]}
+                        alt=""
+                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                          <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* BLOQUE DE DATOS */}
+              <div style={{ borderTop: "1px solid rgba(168,255,96,0.25)", backgroundColor: "#050507", padding: "20px 24px 16px" }}>
+                {/* Fila: badge estado + @ig */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                  <span style={{
+                    backgroundColor: cStyle.bg,
+                    color: cStyle.color,
+                    fontFamily: "monospace",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.15em",
+                    padding: "4px 10px",
+                    borderRadius: 2,
+                  }}>
+                    {condition}
+                  </span>
+                  {ig && (
+                    <span style={{ fontFamily: "monospace", fontSize: 11, color: "#94a3b8" }}>@{ig}</span>
+                  )}
+                </div>
+
+                {/* Descripción */}
+                {description && (
+                  <p style={{ fontFamily: "monospace", fontSize: 12, color: "#cbd5e1", lineHeight: 1.7, margin: "0 0 14px", whiteSpace: "pre-wrap" }}>
+                    {description}
+                  </p>
+                )}
+
+                {/* Precio */}
+                {formattedPrice && (
+                  <div style={{ marginBottom: 14 }}>
+                    <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em", color: "#64748b" }}>Precio</span>
+                    <p style={{ fontFamily: "monospace", fontSize: 26, fontWeight: 900, color: "#A8FF60", margin: "2px 0 0", letterSpacing: "-0.02em" }}>
+                      {formattedPrice}
+                    </p>
+                  </div>
+                )}
+
+                {/* Footer GCWM */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 10, marginTop: 4 }}>
+                  <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.3em", color: "#334155" }}>gcwm.ar</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: "#A8FF60" }} />
+                    <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.25em", color: "#A8FF60" }}>
+                      get cosplayer with me
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 font-mono-tech text-[9px] uppercase tracking-[0.2em] text-slate-600">
+            La imagen se exporta al doble de resolución para mayor calidad.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // ROOT
 // ═══════════════════════════════════════════════════════
 function getStateFromHash() {
@@ -3917,7 +4227,7 @@ function getStateFromHash() {
     };
   }
   return {
-    page: ["home", "shop", "professionals", "community"].includes(h) ? h : "home",
+    page: ["home", "shop", "professionals", "community", "tools"].includes(h) ? h : "home",
     category: "pelucas",
   };
 }
@@ -4196,6 +4506,7 @@ export default function GCWMHomepageMockup() {
       {page === "professionals" && <ProfessionalsPage />}
       {page === "category" && <CategoryPage activeCategoryId={activeCategory} setPage={changePage} openCategory={openCategory} />}
       {page === "community" && <CommunityPage />}
+      {page === "tools" && <ToolsPage />}
       <Footer setPage={changePage} />
       <SubscriptionModal />
       {cartOpen && <CartModal cart={cart} setCart={setCart} onClose={() => setCartOpen(false)} wishlist={wishlist} toggleWishlist={toggleWishlist} />}
