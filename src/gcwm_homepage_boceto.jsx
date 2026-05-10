@@ -3982,75 +3982,123 @@ const TEMPLATE_THEMES = {
 
 const TEMPLATE_WIDTH = 600;
 
-function PhotoGrid({ photos, theme }) {
+const CELL_BTN = {
+  width: 24, height: 24,
+  backgroundColor: "rgba(0,0,0,0.72)",
+  border: "1px solid rgba(255,255,255,0.22)",
+  borderRadius: 3, color: "#fff", cursor: "pointer",
+  fontFamily: "monospace", fontSize: 14, fontWeight: "bold",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  lineHeight: 1, padding: 0, flexShrink: 0,
+};
+
+function DraggablePhotoCell({ src, transform, onTransformChange, containerStyle }) {
+  function handlePointerDown(e) {
+    if (e.target.closest("[data-no-export]")) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const startMx = e.clientX, startMy = e.clientY;
+    const startTx = transform.x, startTy = transform.y;
+    function onMove(ev) {
+      onTransformChange({ x: startTx + (ev.clientX - startMx), y: startTy + (ev.clientY - startMy) });
+    }
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  const s = transform.scale;
+  const pct = s * 100;
+  const off = (100 - pct) / 2;
+
+  return (
+    <div
+      style={{ ...containerStyle, position: "relative", overflow: "hidden", cursor: "grab" }}
+      onPointerDown={handlePointerDown}
+    >
+      <img
+        src={src} alt="" draggable={false}
+        style={{
+          position: "absolute",
+          width: `${pct}%`, height: `${pct}%`,
+          left: `${off}%`, top: `${off}%`,
+          objectFit: "cover",
+          transform: `translate(${transform.x}px, ${transform.y}px)`,
+          userSelect: "none", pointerEvents: "none", display: "block",
+        }}
+      />
+      {/* Controles — excluidos del export */}
+      <div data-no-export="true" style={{ position: "absolute", top: 5, right: 5, display: "flex", gap: 3, zIndex: 10 }}>
+        <button style={CELL_BTN} title="Zoom +"
+          onClick={(e) => { e.stopPropagation(); onTransformChange({ scale: Math.min(s + 0.25, 4) }); }}>+</button>
+        <button style={CELL_BTN} title="Zoom −"
+          onClick={(e) => { e.stopPropagation(); onTransformChange({ scale: Math.max(s - 0.25, 1) }); }}>−</button>
+        <button style={{ ...CELL_BTN, fontSize: 11 }} title="Resetear"
+          onClick={(e) => { e.stopPropagation(); onTransformChange({ scale: 1, x: 0, y: 0 }); }}>↺</button>
+      </div>
+      {s > 1 && (
+        <div data-no-export="true" style={{
+          position: "absolute", bottom: 5, left: "50%", transform: "translateX(-50%)",
+          fontSize: 8, color: "rgba(255,255,255,0.5)", fontFamily: "monospace",
+          textTransform: "uppercase", letterSpacing: "0.1em", whiteSpace: "nowrap", pointerEvents: "none",
+        }}>arrastrá para mover</div>
+      )}
+    </div>
+  );
+}
+
+function PhotoGrid({ photos, transforms, onTransformChange, theme }) {
   const g = theme.gridGap;
-  const cellStyle = { overflow: "hidden", backgroundColor: theme.cellBg };
-  const imgStyle = { width: "100%", height: "100%", objectFit: "cover", display: "block" };
-  const emptyCell = (
-    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+  const base = { backgroundColor: theme.gridBg, padding: g };
+  const empty = (key) => (
+    <div key={key} style={{ overflow: "hidden", backgroundColor: theme.cellBg, aspectRatio: "1/1", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={theme.cellIconStroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
       </svg>
     </div>
   );
+  const draggable = (url, i, extra = {}) => (
+    <DraggablePhotoCell
+      key={i} src={url}
+      transform={transforms[i] || { scale: 1, x: 0, y: 0 }}
+      onTransformChange={(u) => onTransformChange(i, u)}
+      containerStyle={{ aspectRatio: "1/1", ...extra }}
+    />
+  );
 
   const count = photos.length;
 
-  if (count === 0) {
-    return (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: g, backgroundColor: theme.gridBg, padding: g }}>
-        {[0,1,2,3].map(i => (
-          <div key={i} style={{ ...cellStyle, aspectRatio: "1/1" }}>{emptyCell}</div>
-        ))}
-      </div>
-    );
-  }
-
-  if (count === 1) {
-    return (
-      <div style={{ backgroundColor: theme.gridBg, padding: g }}>
-        <div style={{ ...cellStyle, aspectRatio: "1/1" }}>
-          <img src={photos[0]} alt="" style={imgStyle} />
-        </div>
-      </div>
-    );
-  }
-
-  if (count === 2) {
-    return (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: g, backgroundColor: theme.gridBg, padding: g }}>
-        {photos.map((url, i) => (
-          <div key={i} style={{ ...cellStyle, aspectRatio: "1/1" }}>
-            <img src={url} alt="" style={imgStyle} />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (count === 3) {
-    return (
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: g, backgroundColor: theme.gridBg, padding: g }}>
-        <div style={{ ...cellStyle, aspectRatio: "1/1" }}>
-          <img src={photos[0]} alt="" style={imgStyle} />
-        </div>
-        <div style={{ ...cellStyle, aspectRatio: "1/1" }}>
-          <img src={photos[1]} alt="" style={imgStyle} />
-        </div>
-        <div style={{ ...cellStyle, gridColumn: "1 / -1", aspectRatio: "2/1" }}>
-          <img src={photos[2]} alt="" style={imgStyle} />
-        </div>
-      </div>
-    );
-  }
-
+  if (count === 0) return (
+    <div style={{ ...base, display: "grid", gridTemplateColumns: "1fr 1fr", gap: g }}>
+      {[0,1,2,3].map(i => empty(i))}
+    </div>
+  );
+  if (count === 1) return (
+    <div style={base}>{draggable(photos[0], 0)}</div>
+  );
+  if (count === 2) return (
+    <div style={{ ...base, display: "grid", gridTemplateColumns: "1fr 1fr", gap: g }}>
+      {photos.map((url, i) => draggable(url, i))}
+    </div>
+  );
+  if (count === 3) return (
+    <div style={{ ...base, display: "grid", gridTemplateColumns: "1fr 1fr", gap: g }}>
+      {draggable(photos[0], 0)}
+      {draggable(photos[1], 1)}
+      <DraggablePhotoCell
+        key={2} src={photos[2]}
+        transform={transforms[2] || { scale: 1, x: 0, y: 0 }}
+        onTransformChange={(u) => onTransformChange(2, u)}
+        containerStyle={{ gridColumn: "1 / -1", aspectRatio: "2/1" }}
+      />
+    </div>
+  );
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: g, backgroundColor: theme.gridBg, padding: g }}>
-      {photos.map((url, i) => (
-        <div key={i} style={{ ...cellStyle, aspectRatio: "1/1" }}>
-          <img src={url} alt="" style={imgStyle} />
-        </div>
-      ))}
+    <div style={{ ...base, display: "grid", gridTemplateColumns: "1fr 1fr", gap: g }}>
+      {photos.map((url, i) => draggable(url, i))}
     </div>
   );
 }
@@ -4061,6 +4109,7 @@ function ToolsPage() {
   const [description, setDescription] = useState("");
   const [condition, setCondition] = useState("Nuevo");
   const [photos, setPhotos] = useState([]);
+  const [photoTransforms, setPhotoTransforms] = useState([]);
   const [exporting, setExporting] = useState(false);
   const [themeKey, setThemeKey] = useState("eva");
   const templateRef = useRef(null);
@@ -4076,6 +4125,10 @@ function ToolsPage() {
           if (prev.length >= 4) return prev;
           return [...prev, ev.target.result];
         });
+        setPhotoTransforms((prev) => {
+          if (prev.length >= 4) return prev;
+          return [...prev, { scale: 1, x: 0, y: 0 }];
+        });
       };
       reader.readAsDataURL(file);
     });
@@ -4084,6 +4137,11 @@ function ToolsPage() {
 
   function removePhoto(index) {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+    setPhotoTransforms((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateTransform(index, updates) {
+    setPhotoTransforms((prev) => prev.map((t, i) => i === index ? { ...t, ...updates } : t));
   }
 
   async function handleExport() {
@@ -4094,6 +4152,7 @@ function ToolsPage() {
         pixelRatio: 2,
         cacheBust: true,
         width: TEMPLATE_WIDTH,
+        filter: (node) => typeof node.getAttribute !== "function" || node.getAttribute("data-no-export") !== "true",
       });
       const link = document.createElement("a");
       link.download = `gcwm-venta-${Date.now()}.png`;
@@ -4126,33 +4185,43 @@ function ToolsPage() {
       <div className="mt-12 grid gap-10 lg:grid-cols-2">
         {/* ── FORMULARIO ── */}
         <div className="space-y-6">
-          {/* Fotos */}
+
+          {/* Fotos — compacto, la edición pasa en el preview */}
           <div>
             <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">
               Fotos del producto <span className="text-slate-600">({photos.length}/4)</span>
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              {photos.map((url, i) => (
-                <div key={i} className="group relative aspect-square overflow-hidden rounded-sm border border-white/10 bg-black/40">
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(i)}
-                    className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-sm bg-black/80 text-white opacity-0 transition group-hover:opacity-100 hover:bg-red-600"
-                    aria-label="Eliminar foto"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-              {photos.length < 4 && (
-                <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-sm border border-dashed border-white/20 text-slate-500 transition hover:border-[var(--eva-green)]/50 hover:text-[var(--eva-green)]">
-                  <Camera className="h-6 w-6" />
-                  <span className="font-mono-tech text-[9px] uppercase tracking-wider">Agregar</span>
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoAdd} />
-                </label>
-              )}
-            </div>
+            {photos.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {photos.map((url, i) => (
+                  <div key={i} className="group relative">
+                    <img src={url} alt="" className="h-14 w-14 rounded-sm border border-white/10 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(i)}
+                      className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-red-600 text-white"
+                      aria-label="Eliminar foto"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {photos.length < 4 && (
+              <label className="flex cursor-pointer items-center gap-3 rounded-sm border border-dashed border-white/20 px-4 py-3 text-slate-500 transition hover:border-[var(--eva-green)]/50 hover:text-[var(--eva-green)]">
+                <Camera className="h-5 w-5 shrink-0" />
+                <span className="font-mono-tech text-[10px] uppercase tracking-wider">
+                  {photos.length === 0 ? "Agregar fotos (hasta 4)" : "Agregar más"}
+                </span>
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoAdd} />
+              </label>
+            )}
+            {photos.length > 0 && (
+              <p className="mt-2 font-mono-tech text-[9px] uppercase tracking-[0.15em] text-slate-600">
+                Usá + / − y arrastre en el preview para ajustar cada foto
+              </p>
+            )}
           </div>
 
           {/* Instagram */}
@@ -4174,9 +4243,7 @@ function ToolsPage() {
           <div>
             <label className="mb-2 block font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Precio (ARS)</label>
             <input
-              type="number"
-              min="0"
-              value={price}
+              type="number" min="0" value={price}
               onChange={(e) => setPrice(e.target.value)}
               placeholder="15000"
               className="w-full rounded-sm border border-white/10 bg-black/40 px-3 py-2.5 font-mono-tech text-sm text-white outline-none placeholder:text-slate-600 focus:border-[var(--eva-green)]/40"
@@ -4203,16 +4270,10 @@ function ToolsPage() {
                 const s = theme.conditions[c];
                 const active = condition === c;
                 return (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCondition(c)}
+                  <button key={c} type="button" onClick={() => setCondition(c)}
                     style={active ? { backgroundColor: s.bg, color: s.color } : {}}
-                    className={cn(
-                      "rounded-sm px-4 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] transition",
-                      active ? "font-bold" : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/30 hover:text-white"
-                    )}
-                  >
+                    className={cn("rounded-sm px-4 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] transition",
+                      active ? "font-bold" : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/30 hover:text-white")}>
                     {c}
                   </button>
                 );
@@ -4225,17 +4286,11 @@ function ToolsPage() {
             <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Estilo del template</p>
             <div className="flex gap-2">
               {Object.entries(TEMPLATE_THEMES).map(([key, t]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setThemeKey(key)}
-                  className={cn(
-                    "rounded-sm px-5 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] transition",
+                <button key={key} type="button" onClick={() => setThemeKey(key)}
+                  className={cn("rounded-sm px-5 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] transition",
                     themeKey === key
                       ? "bg-[var(--eva-green)] font-bold text-black"
-                      : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/30 hover:text-white"
-                  )}
-                >
+                      : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/30 hover:text-white")}>
                   {t.label}
                 </button>
               ))}
@@ -4243,12 +4298,8 @@ function ToolsPage() {
           </div>
 
           {/* Exportar */}
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={exporting || !canExport}
-            className="flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-          >
+          <button type="button" onClick={handleExport} disabled={exporting || !canExport}
+            className="flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40">
             <Download className="h-4 w-4" />
             {exporting ? "Generando imagen..." : "Descargar imagen ▸"}
           </button>
@@ -4256,11 +4307,17 @@ function ToolsPage() {
 
         {/* ── PREVIEW ── */}
         <div>
-          <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Vista previa del template</p>
-          {/* overflow-x: auto para que en mobile se pueda scrollear sin deformar */}
+          <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">
+            Vista previa — editá zoom y posición directo en cada foto
+          </p>
           <div className="overflow-x-auto rounded-sm border border-white/10 shadow-2xl shadow-black/60">
             <div ref={templateRef} style={{ width: TEMPLATE_WIDTH, fontFamily: "monospace", flexShrink: 0 }}>
-              <PhotoGrid photos={photos} theme={theme} />
+              <PhotoGrid
+                photos={photos}
+                transforms={photoTransforms}
+                onTransformChange={updateTransform}
+                theme={theme}
+              />
 
               {/* BLOQUE DE DATOS */}
               <div style={{ borderTop: theme.dataBorder, backgroundColor: theme.dataBg, padding: "20px 24px 16px" }}>
@@ -4270,9 +4327,7 @@ function ToolsPage() {
                     fontFamily: "monospace", fontSize: 10, fontWeight: 700,
                     textTransform: "uppercase", letterSpacing: "0.15em",
                     padding: "4px 10px", borderRadius: 2,
-                  }}>
-                    {condition}
-                  </span>
+                  }}>{condition}</span>
                   {ig && <span style={{ fontFamily: "monospace", fontSize: 11, color: theme.igColor }}>@{ig}</span>}
                 </div>
 
@@ -4306,7 +4361,7 @@ function ToolsPage() {
             </div>
           </div>
           <p className="mt-3 font-mono-tech text-[9px] uppercase tracking-[0.2em] text-slate-600">
-            La imagen se exporta a 1200px de ancho para mayor calidad.
+            Los botones de edición no aparecen en la imagen exportada.
           </p>
         </div>
       </div>
