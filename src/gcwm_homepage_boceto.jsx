@@ -49,6 +49,9 @@ const SUBSCRIPTION_ENDPOINT = "https://script.google.com/macros/s/AKfycbyazKz-uS
 // Cuántos segundos esperar antes de mostrar el modal de suscripción
 const SUBSCRIPTION_MODAL_DELAY_MS = 8000;
 
+// URL pública del sitio (aparece en el footer del template de venta)
+const SITE_URL = "ominizz23.github.io/gcwm-web";
+
 // Próximo evento de cosplay
 const NEXT_EVENT = {
   name: "Cosmo Buenos Aires 2026",
@@ -3928,12 +3931,129 @@ function Footer({ setPage }) {
 // ═══════════════════════════════════════════════════════
 const SALE_CONDITIONS = ["Nuevo", "Como nuevo", "Usado", "Para piezas"];
 
-const CONDITION_STYLE = {
-  "Nuevo":       { bg: "#A8FF60", color: "#000" },
-  "Como nuevo":  { bg: "#7acc44", color: "#000" },
-  "Usado":       { bg: "#FF6B1A", color: "#000" },
-  "Para piezas": { bg: "#dc2626", color: "#fff" },
+const TEMPLATE_THEMES = {
+  eva: {
+    label: "EVA-01",
+    gridBg: "#050507",
+    cellBg: "#0d0d10",
+    gridGap: 3,
+    cellIconStroke: "rgba(255,255,255,0.07)",
+    dataBg: "#050507",
+    dataBorder: "2px solid rgba(168,255,96,0.3)",
+    igColor: "#94a3b8",
+    descColor: "#cbd5e1",
+    priceLabel: "#64748b",
+    priceColor: "#A8FF60",
+    footerBorder: "rgba(255,255,255,0.05)",
+    footerUrlColor: "#334155",
+    footerDotColor: "#A8FF60",
+    footerTagColor: "#A8FF60",
+    conditions: {
+      "Nuevo":       { bg: "#A8FF60", color: "#000" },
+      "Como nuevo":  { bg: "#7acc44", color: "#000" },
+      "Usado":       { bg: "#FF6B1A", color: "#000" },
+      "Para piezas": { bg: "#dc2626", color: "#fff" },
+    },
+  },
+  cute: {
+    label: "Cute",
+    gridBg: "#fde8f0",
+    cellBg: "#fff0f7",
+    gridGap: 4,
+    cellIconStroke: "rgba(200,100,150,0.15)",
+    dataBg: "#fff5f9",
+    dataBorder: "2px solid #f4b8d1",
+    igColor: "#a07090",
+    descColor: "#6b4f6b",
+    priceLabel: "#c490b0",
+    priceColor: "#9b59b6",
+    footerBorder: "rgba(220,140,180,0.25)",
+    footerUrlColor: "#d4a0c0",
+    footerDotColor: "#f4a0c0",
+    footerTagColor: "#b090c0",
+    conditions: {
+      "Nuevo":       { bg: "#b5ead7", color: "#2d5a47" },
+      "Como nuevo":  { bg: "#c7ceea", color: "#3a3d6b" },
+      "Usado":       { bg: "#ffb7b2", color: "#7a2020" },
+      "Para piezas": { bg: "#ff9aa2", color: "#7a2020" },
+    },
+  },
 };
+
+const TEMPLATE_WIDTH = 600;
+
+function PhotoGrid({ photos, theme }) {
+  const g = theme.gridGap;
+  const cellStyle = { overflow: "hidden", backgroundColor: theme.cellBg };
+  const imgStyle = { width: "100%", height: "100%", objectFit: "cover", display: "block" };
+  const emptyCell = (
+    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={theme.cellIconStroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+      </svg>
+    </div>
+  );
+
+  const count = photos.length;
+
+  if (count === 0) {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: g, backgroundColor: theme.gridBg, padding: g }}>
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{ ...cellStyle, aspectRatio: "1/1" }}>{emptyCell}</div>
+        ))}
+      </div>
+    );
+  }
+
+  if (count === 1) {
+    return (
+      <div style={{ backgroundColor: theme.gridBg, padding: g }}>
+        <div style={{ ...cellStyle, aspectRatio: "1/1" }}>
+          <img src={photos[0]} alt="" style={imgStyle} />
+        </div>
+      </div>
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: g, backgroundColor: theme.gridBg, padding: g }}>
+        {photos.map((url, i) => (
+          <div key={i} style={{ ...cellStyle, aspectRatio: "1/1" }}>
+            <img src={url} alt="" style={imgStyle} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (count === 3) {
+    return (
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: g, backgroundColor: theme.gridBg, padding: g }}>
+        <div style={{ ...cellStyle, aspectRatio: "1/1" }}>
+          <img src={photos[0]} alt="" style={imgStyle} />
+        </div>
+        <div style={{ ...cellStyle, aspectRatio: "1/1" }}>
+          <img src={photos[1]} alt="" style={imgStyle} />
+        </div>
+        <div style={{ ...cellStyle, gridColumn: "1 / -1", aspectRatio: "2/1" }}>
+          <img src={photos[2]} alt="" style={imgStyle} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: g, backgroundColor: theme.gridBg, padding: g }}>
+      {photos.map((url, i) => (
+        <div key={i} style={{ ...cellStyle, aspectRatio: "1/1" }}>
+          <img src={url} alt="" style={imgStyle} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ToolsPage() {
   const [ig, setIg] = useState("");
@@ -3942,7 +4062,10 @@ function ToolsPage() {
   const [condition, setCondition] = useState("Nuevo");
   const [photos, setPhotos] = useState([]);
   const [exporting, setExporting] = useState(false);
+  const [themeKey, setThemeKey] = useState("eva");
   const templateRef = useRef(null);
+
+  const theme = TEMPLATE_THEMES[themeKey];
 
   function handlePhotoAdd(e) {
     const files = Array.from(e.target.files);
@@ -3967,7 +4090,11 @@ function ToolsPage() {
     if (!templateRef.current) return;
     setExporting(true);
     try {
-      const dataUrl = await toPng(templateRef.current, { pixelRatio: 2, cacheBust: true });
+      const dataUrl = await toPng(templateRef.current, {
+        pixelRatio: 2,
+        cacheBust: true,
+        width: TEMPLATE_WIDTH,
+      });
       const link = document.createElement("a");
       link.download = `gcwm-venta-${Date.now()}.png`;
       link.href = dataUrl;
@@ -3983,7 +4110,7 @@ function ToolsPage() {
     ? new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(Number(price))
     : "";
 
-  const cStyle = CONDITION_STYLE[condition];
+  const condStyle = theme.conditions[condition];
   const canExport = photos.length > 0 || price || description;
 
   return (
@@ -4022,13 +4149,7 @@ function ToolsPage() {
                 <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-sm border border-dashed border-white/20 text-slate-500 transition hover:border-[var(--eva-green)]/50 hover:text-[var(--eva-green)]">
                   <Camera className="h-6 w-6" />
                   <span className="font-mono-tech text-[9px] uppercase tracking-wider">Agregar</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handlePhotoAdd}
-                  />
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoAdd} />
                 </label>
               )}
             </div>
@@ -4037,7 +4158,7 @@ function ToolsPage() {
           {/* Instagram */}
           <div>
             <label className="mb-2 block font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Instagram</label>
-            <div className="flex items-center gap-0 rounded-sm border border-white/10 bg-black/40 focus-within:border-[var(--eva-green)]/40">
+            <div className="flex items-center rounded-sm border border-white/10 bg-black/40 focus-within:border-[var(--eva-green)]/40">
               <span className="pl-3 font-mono-tech text-sm text-slate-500">@</span>
               <input
                 type="text"
@@ -4079,7 +4200,7 @@ function ToolsPage() {
             <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Estado del producto</p>
             <div className="flex flex-wrap gap-2">
               {SALE_CONDITIONS.map((c) => {
-                const s = CONDITION_STYLE[c];
+                const s = theme.conditions[c];
                 const active = condition === c;
                 return (
                   <button
@@ -4089,9 +4210,7 @@ function ToolsPage() {
                     style={active ? { backgroundColor: s.bg, color: s.color } : {}}
                     className={cn(
                       "rounded-sm px-4 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] transition",
-                      active
-                        ? "font-bold"
-                        : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/30 hover:text-white"
+                      active ? "font-bold" : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/30 hover:text-white"
                     )}
                   >
                     {c}
@@ -4101,7 +4220,29 @@ function ToolsPage() {
             </div>
           </div>
 
-          {/* Botón exportar */}
+          {/* Estilo */}
+          <div>
+            <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Estilo del template</p>
+            <div className="flex gap-2">
+              {Object.entries(TEMPLATE_THEMES).map(([key, t]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setThemeKey(key)}
+                  className={cn(
+                    "rounded-sm px-5 py-2 font-mono-tech text-xs uppercase tracking-[0.15em] transition",
+                    themeKey === key
+                      ? "bg-[var(--eva-green)] font-bold text-black"
+                      : "border border-white/10 bg-black/40 text-slate-400 hover:border-white/30 hover:text-white"
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Exportar */}
           <button
             type="button"
             onClick={handleExport}
@@ -4113,91 +4254,50 @@ function ToolsPage() {
           </button>
         </div>
 
-        {/* ── PREVIEW / TEMPLATE ── */}
+        {/* ── PREVIEW ── */}
         <div>
           <p className="mb-3 font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">Vista previa del template</p>
-          <div className="overflow-hidden rounded-sm border border-white/10 shadow-2xl shadow-black/60">
-            <div
-              ref={templateRef}
-              style={{ width: "100%", maxWidth: 600, backgroundColor: "#050507", fontFamily: "monospace" }}
-            >
-              {/* GRID DE FOTOS 2×2 */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-                {[0, 1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: "relative",
-                      aspectRatio: "1/1",
-                      overflow: "hidden",
-                      backgroundColor: "#0d0d10",
-                      borderRight: i % 2 === 0 ? "1px solid rgba(168,255,96,0.15)" : "none",
-                      borderBottom: i < 2 ? "1px solid rgba(168,255,96,0.15)" : "none",
-                    }}
-                  >
-                    {photos[i] ? (
-                      <img
-                        src={photos[i]}
-                        alt=""
-                        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                      />
-                    ) : (
-                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                          <circle cx="12" cy="13" r="4"/>
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {/* overflow-x: auto para que en mobile se pueda scrollear sin deformar */}
+          <div className="overflow-x-auto rounded-sm border border-white/10 shadow-2xl shadow-black/60">
+            <div ref={templateRef} style={{ width: TEMPLATE_WIDTH, fontFamily: "monospace", flexShrink: 0 }}>
+              <PhotoGrid photos={photos} theme={theme} />
 
               {/* BLOQUE DE DATOS */}
-              <div style={{ borderTop: "1px solid rgba(168,255,96,0.25)", backgroundColor: "#050507", padding: "20px 24px 16px" }}>
-                {/* Fila: badge estado + @ig */}
+              <div style={{ borderTop: theme.dataBorder, backgroundColor: theme.dataBg, padding: "20px 24px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
                   <span style={{
-                    backgroundColor: cStyle.bg,
-                    color: cStyle.color,
-                    fontFamily: "monospace",
-                    fontSize: 10,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.15em",
-                    padding: "4px 10px",
-                    borderRadius: 2,
+                    backgroundColor: condStyle.bg, color: condStyle.color,
+                    fontFamily: "monospace", fontSize: 10, fontWeight: 700,
+                    textTransform: "uppercase", letterSpacing: "0.15em",
+                    padding: "4px 10px", borderRadius: 2,
                   }}>
                     {condition}
                   </span>
-                  {ig && (
-                    <span style={{ fontFamily: "monospace", fontSize: 11, color: "#94a3b8" }}>@{ig}</span>
-                  )}
+                  {ig && <span style={{ fontFamily: "monospace", fontSize: 11, color: theme.igColor }}>@{ig}</span>}
                 </div>
 
-                {/* Descripción */}
                 {description && (
-                  <p style={{ fontFamily: "monospace", fontSize: 12, color: "#cbd5e1", lineHeight: 1.7, margin: "0 0 14px", whiteSpace: "pre-wrap" }}>
+                  <p style={{ fontFamily: "monospace", fontSize: 12, color: theme.descColor, lineHeight: 1.7, margin: "0 0 14px", whiteSpace: "pre-wrap" }}>
                     {description}
                   </p>
                 )}
 
-                {/* Precio */}
                 {formattedPrice && (
                   <div style={{ marginBottom: 14 }}>
-                    <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em", color: "#64748b" }}>Precio</span>
-                    <p style={{ fontFamily: "monospace", fontSize: 26, fontWeight: 900, color: "#A8FF60", margin: "2px 0 0", letterSpacing: "-0.02em" }}>
+                    <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.2em", color: theme.priceLabel }}>Precio</span>
+                    <p style={{ fontFamily: "monospace", fontSize: 26, fontWeight: 900, color: theme.priceColor, margin: "2px 0 0", letterSpacing: "-0.02em" }}>
                       {formattedPrice}
                     </p>
                   </div>
                 )}
 
-                {/* Footer GCWM */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: 10, marginTop: 4 }}>
-                  <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.3em", color: "#334155" }}>gcwm.ar</span>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: `1px solid ${theme.footerBorder}`, paddingTop: 10, marginTop: 4 }}>
+                  <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.3em", color: theme.footerUrlColor }}>
+                    {SITE_URL}
+                  </span>
                   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: "#A8FF60" }} />
-                    <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.25em", color: "#A8FF60" }}>
+                    <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: theme.footerDotColor }} />
+                    <span style={{ fontFamily: "monospace", fontSize: 9, textTransform: "uppercase", letterSpacing: "0.25em", color: theme.footerTagColor }}>
                       get cosplayer with me
                     </span>
                   </div>
@@ -4206,7 +4306,7 @@ function ToolsPage() {
             </div>
           </div>
           <p className="mt-3 font-mono-tech text-[9px] uppercase tracking-[0.2em] text-slate-600">
-            La imagen se exporta al doble de resolución para mayor calidad.
+            La imagen se exporta a 1200px de ancho para mayor calidad.
           </p>
         </div>
       </div>
