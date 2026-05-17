@@ -227,3 +227,72 @@ Recomendable como **paso 0** mientras se trabaja la migración a Capacitor en pa
 3. Conseguir dominio (`gcwm.app` o similar) — necesario para deep links y para TWA.
 4. Generar keystore y guardarlo seguro.
 5. Definir si la primera versión incluye push notifications (sí → necesita Firebase project + backend para tokens).
+
+---
+
+## 10. Setup local y gotchas verificados en práctica
+
+Validado el 2026-05-17 compilando el primer APK debug (`app-debug.apk` 13.66 MB, instalado y corriendo en emulador).
+
+### Requisitos verificados
+
+- **Android Studio** Meerkat / Narwhal o más nuevo (soporta AGP 9.x). Versiones viejas como Iguana/Jellyfish fallan con `incompatible AGP version`.
+- **JDK 21 LTS obligatorio**. Capacitor 8.x + sus plugins declaran Gradle toolchain `languageVersion=21`. Java 24 **NO sirve**: Gradle lo rechaza con `Cannot find a Java installation matching: {languageVersion=21}`. Solución más simple: usar el JBR (JetBrains Runtime) bundled de Studio en `C:\Program Files\Android\Android Studio\jbr`.
+- **ANDROID_HOME** apuntando al SDK (`%LOCALAPPDATA%\Android\Sdk` por default en Windows).
+
+### Setup mínimo en PowerShell para una sesión
+
+```powershell
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+```
+
+Para persistir: *Editar las variables de entorno del sistema* en Windows.
+
+### Gotchas al upgrade AGP 8 → 9
+
+Capacitor 8.3.x scaffoldea para AGP 8.13. Cuando Studio actualiza a AGP 9.x, hay que aplicar:
+
+1. **Proguard rename**: `android/app/build.gradle` — cambiar `getDefaultProguardFile('proguard-android.txt')` → `getDefaultProguardFile('proguard-android-optimize.txt')`. AGP 9 eliminó el archivo viejo porque incluye `-dontoptimize`.
+2. **Studio agrega flags de compat** en `android/gradle.properties` (ej. `android.newDsl=false`, `android.builtInKotlin=false`) — necesarios mientras Capacitor 8 use APIs legacy. Dejar como vienen.
+3. **Gradle wrapper** sube a 9.x automáticamente al sincronizar.
+
+### Build + install + run desde CLI (sin abrir Studio)
+
+```powershell
+# 1. Build vite + sync plugins
+npm run android:build
+
+# 2. Compilar APK debug
+cd android
+.\gradlew.bat assembleDebug --no-daemon
+# Resultado: android\app\build\outputs\apk\debug\app-debug.apk
+
+# 3. Instalar en emulador o device conectado
+$adb = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+& $adb install -r app\build\outputs\apk\debug\app-debug.apk
+& $adb shell am start -n "ar.com.gcwm.app/.MainActivity"
+
+# 4. Ver logs (Capacitor + crashes)
+& $adb logcat -v brief Capacitor:V Capacitor/Console:V AndroidRuntime:E "*:S"
+```
+
+Primera build: ~2 min (descarga dependencias). Rebuilds incrementales: ~10-20 s.
+
+### Verificado funcionando en emulador
+
+- ✅ App arranca sin crashes, todos los plugins se registran (Camera, Haptics, Share, App, StatusBar, SplashScreen).
+- ✅ Bundle carga desde `https://localhost` (base relativa OK).
+- ✅ Status bar dark + eva-black aplicado al boot.
+- ✅ Modal de suscripción aparece a los 8 s.
+- ✅ Tipografías (Bebas Neue, Inter Tight) cargan de Google Fonts.
+- ✅ Layout, colores y navegación idénticos al web.
+
+### Pendientes de validar en device real
+
+- Back button (cierra modal → home → exit) — wired pero no testeado interactivamente.
+- Picker nativo de galería en el wizard de templates (`@capacitor/camera`).
+- Share sheet nativo en el botón "Compartir texto".
+- Haptics al agregar al carrito y al exportar template.
+- `html-to-image` exportando el template (foco de riesgo histórico).
