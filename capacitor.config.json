@@ -1,0 +1,12 @@
+{
+  "appId": "ar.com.gcwm.app",
+  "appName": "GCWM",
+  "webDir": "dist",
+  "backgroundColor": "#050507",
+  "android": {
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

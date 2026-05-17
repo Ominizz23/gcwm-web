@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GCWM</string>
+    <string name="title_activity_main">GCWM</string>
+    <string name="package_name">ar.com.gcwm.app</string>
+    <string name="custom_url_scheme">ar.com.gcwm.app</string>
+</resources>
