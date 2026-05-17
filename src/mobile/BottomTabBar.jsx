@@ -1,13 +1,13 @@
 import React from "react";
-import { Home, ShoppingBag, Users, Menu } from "lucide-react";
+import { Home, ShoppingBag, Wrench, Menu } from "lucide-react";
 import { haptic } from "../native.js";
 
-// 4 tabs fijos: Inicio, Catálogo, Pros, Más.
+// 4 tabs fijos: Inicio, Catálogo, Tools, Más.
 // Sticky abajo con safe-area-inset-bottom para gesture nav bar.
 const TABS = [
   { id: "home", label: "Inicio", Icon: Home },
   { id: "shop", label: "Catálogo", Icon: ShoppingBag },
-  { id: "professionals", label: "Pros", Icon: Users },
+  { id: "tools", label: "Tools", Icon: Wrench },
   { id: "more", label: "Más", Icon: Menu },
 ];
 

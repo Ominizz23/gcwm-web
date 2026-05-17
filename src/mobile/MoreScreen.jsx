@@ -2,7 +2,6 @@ import React from "react";
 import {
   ChevronRight,
   Users,
-  Wrench,
   Wand2,
   MessageCircle,
   Mail,
@@ -89,15 +88,15 @@ export default function MoreScreen({
         })}
         {row({
           Icon: Users,
+          label: "Profesionales",
+          sub: "Cosplayers colaboradores",
+          onClick: () => setPage("professionals"),
+        })}
+        {row({
+          Icon: Users,
           label: "Comunidad",
           sub: "Conectá con otros cosplayers",
           onClick: () => setPage("community"),
-        })}
-        {row({
-          Icon: Wrench,
-          label: "Herramientas",
-          sub: "Generador de templates",
-          onClick: () => setPage("tools"),
         })}
       </div>
 
