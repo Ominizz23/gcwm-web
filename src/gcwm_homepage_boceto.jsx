@@ -34,6 +34,8 @@ import { tutorials } from "./data/tutorials";
 import { products as shopItems } from "./data/products";
 import { professionals } from "./data/professionals";
 import { characters } from "./data/characters";
+import { postJson, exitApp } from "./native.js";
+import { useAndroidBackButton } from "./use-android-back.js";
 
 // ───────────────────────────────────────────────────────
 // Configuración del negocio
@@ -88,20 +90,15 @@ async function sendSubscription({ name = "", instagram = "", email = "", source 
   if (!SUBSCRIPTION_ENDPOINT) return;
 
   try {
-    await fetch(SUBSCRIPTION_ENDPOINT, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({
-        name,
-        instagram,
-        email,
-        timestamp: new Date().toISOString(),
-      }),
+    // En nativo (Android) usa CapacitorHttp y evita el problema de CORS preflight.
+    // En web sigue siendo fetch no-cors (los datos llegan al Sheet pero no se lee respuesta).
+    await postJson(SUBSCRIPTION_ENDPOINT, {
+      name,
+      instagram,
+      email,
+      timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    // mode no-cors hace que no podamos leer la respuesta
-    // pero los datos igual llegan a la sheet
     console.warn("Subscription send error:", err);
   }
 }
@@ -4727,6 +4724,16 @@ export default function GCWMHomepageMockup() {
     window.location.hash = `category-${categoryId}`;
     window.scrollTo({ top: 0, behavior: "auto" });
   }
+
+  // Back button de Android: cierra modal → vuelve a home → sale de la app.
+  // Es no-op en web.
+  useAndroidBackButton(() => {
+    if (buildOpen) return setBuildOpen(false);
+    if (searchOpen) return setSearchOpen(false);
+    if (cartOpen) return setCartOpen(false);
+    if (page !== "home") return changePage("home");
+    exitApp();
+  });
 
   return (
     <main className="min-h-screen bg-[var(--eva-black)] text-white">
