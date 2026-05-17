@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "compress": "node scripts/compress-images.mjs",
+    "android:assets": "node scripts/generate-android-assets.mjs && capacitor-assets generate --android",
     "android:build": "vite build --mode capacitor && cap sync android",
     "android:open": "vite build --mode capacitor && cap sync android && cap open android",
     "android:run": "vite build --mode capacitor && cap sync android && cap run android"
@@ -15,7 +16,10 @@
   "dependencies": {
     "@capacitor/android": "^8.3.4",
     "@capacitor/app": "^8.1.0",
+    "@capacitor/camera": "^8.2.0",
     "@capacitor/core": "^8.3.4",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/share": "^8.0.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
     "framer-motion": "latest",
@@ -25,6 +29,7 @@
     "react-dom": "latest"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.3.4",
     "@tailwindcss/vite": "latest",
     "@vitejs/plugin-react": "latest",
