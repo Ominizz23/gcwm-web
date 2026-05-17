@@ -56,3 +56,101 @@ export async function postJson(url, body, { headers = {} } = {}) {
     body: typeof body === 'string' ? body : JSON.stringify(body),
   });
 }
+
+// Comparte texto/url usando el share sheet nativo de Android.
+// En web usa navigator.share si está disponible, sino copia la URL al clipboard.
+// Devuelve true si se compartió/copió, false si el usuario canceló o falló.
+export async function share({ title, text, url }) {
+  if (isNative()) {
+    try {
+      const { Share } = await import('@capacitor/share');
+      await Share.share({ title, text, url, dialogTitle: title });
+      return true;
+    } catch (err) {
+      // El usuario canceló — no es error real
+      return false;
+    }
+  }
+
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    try {
+      await navigator.share({ title, text, url });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Último fallback: copiar al clipboard
+  try {
+    await navigator.clipboard.writeText(url || text || '');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Feedback táctil. style: 'light' | 'medium' | 'heavy'. No-op en web.
+export async function haptic(style = 'light') {
+  if (!isNative()) return;
+  try {
+    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+    const map = { light: ImpactStyle.Light, medium: ImpactStyle.Medium, heavy: ImpactStyle.Heavy };
+    await Haptics.impact({ style: map[style] || ImpactStyle.Light });
+  } catch {
+    // ignore
+  }
+}
+
+// Devuelve un array de dataURLs de hasta `max` fotos.
+// En nativo abre el picker de galería con `@capacitor/camera`.
+// En web crea un input file dinámico (mismo flujo que el original).
+export async function pickPhotos(max = 4) {
+  if (max <= 0) return [];
+
+  if (isNative()) {
+    try {
+      const { Camera } = await import('@capacitor/camera');
+      const result = await Camera.pickImages({ quality: 90, limit: max });
+      return Promise.all((result.photos || []).slice(0, max).map(async (p) => {
+        const res = await fetch(p.webPath);
+        const blob = await res.blob();
+        return blobToDataURL(blob);
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = max > 1;
+    input.onchange = async () => {
+      const files = Array.from(input.files || []).slice(0, max);
+      const urls = await Promise.all(files.map(fileToDataURL));
+      resolve(urls);
+    };
+    input.oncancel = () => resolve([]);
+    input.click();
+  });
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => resolve(ev.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}

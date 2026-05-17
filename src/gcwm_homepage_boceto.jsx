@@ -18,6 +18,7 @@ import {
   PlayCircle,
   Scissors,
   Search,
+  Share2,
   ShoppingBag,
   Sparkles,
   Tag,
@@ -34,7 +35,7 @@ import { tutorials } from "./data/tutorials";
 import { products as shopItems } from "./data/products";
 import { professionals } from "./data/professionals";
 import { characters } from "./data/characters";
-import { postJson, exitApp } from "./native.js";
+import { postJson, exitApp, share, haptic, pickPhotos } from "./native.js";
 import { useAndroidBackButton } from "./use-android-back.js";
 
 // ───────────────────────────────────────────────────────
@@ -1694,6 +1695,7 @@ function ShopPage({ cart, setCart, wishlist, toggleWishlist }) {
 
   function addToCart(productId) {
     setCart((current) => ({ ...current, [productId]: (current[productId] || 0) + 1 }));
+    haptic("light");
   }
 
   function changeQty(productId, delta) {
@@ -2562,6 +2564,7 @@ function CartModal({ cart, setCart, onClose, wishlist, toggleWishlist }) {
 
   function addToCart(productId) {
     setCart((current) => ({ ...current, [productId]: (current[productId] || 0) + 1 }));
+    haptic("light");
   }
 
   function changeQty(productId, delta) {
@@ -4159,23 +4162,16 @@ function ToolsPage() {
 
   const theme = TEMPLATE_THEMES[themeKey];
 
-  function handlePhotoAdd(e) {
-    const files = Array.from(e.target.files);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPhotos((prev) => {
-          if (prev.length >= 4) return prev;
-          return [...prev, ev.target.result];
-        });
-        setPhotoTransforms((prev) => {
-          if (prev.length >= 4) return prev;
-          return [...prev, { scale: 1, x: 0, y: 0 }];
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-    e.target.value = "";
+  async function handlePhotoAdd() {
+    const remaining = 4 - photos.length;
+    if (remaining <= 0) return;
+    const dataUrls = await pickPhotos(remaining);
+    if (!dataUrls.length) return;
+    setPhotos((prev) => [...prev, ...dataUrls].slice(0, 4));
+    setPhotoTransforms((prev) => [
+      ...prev,
+      ...dataUrls.map(() => ({ scale: 1, x: 0, y: 0 })),
+    ].slice(0, 4));
   }
 
   function removePhoto(index) {
@@ -4247,11 +4243,27 @@ function ToolsPage() {
       link.download = `gcwm-venta-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
+      haptic("medium");
     } catch (err) {
       console.error("Export error:", err);
     } finally {
       setExporting(false);
     }
+  }
+
+  async function handleShare() {
+    const lines = [];
+    if (description.trim()) lines.push(description.trim());
+    if (formattedPrice) lines.push(`Precio: ${formattedPrice}`);
+    if (condition) lines.push(`Estado: ${condition}`);
+    if (ig.trim()) lines.push(`Contacto: @${ig.trim().replace(/^@/, "")}`);
+    const text = lines.join("\n");
+    const ok = await share({
+      title: "Venta GCWM",
+      text,
+      url: `https://${SITE_URL}`,
+    });
+    if (ok) haptic("light");
   }
 
   const formattedPrice = price
@@ -4298,13 +4310,16 @@ function ToolsPage() {
               </div>
             )}
             {photos.length < 4 && (
-              <label className="flex cursor-pointer items-center gap-3 rounded-sm border border-dashed border-white/20 px-4 py-3 text-slate-500 transition hover:border-[var(--eva-green)]/50 hover:text-[var(--eva-green)]">
+              <button
+                type="button"
+                onClick={handlePhotoAdd}
+                className="flex w-full cursor-pointer items-center gap-3 rounded-sm border border-dashed border-white/20 px-4 py-3 text-left text-slate-500 transition hover:border-[var(--eva-green)]/50 hover:text-[var(--eva-green)]"
+              >
                 <Camera className="h-5 w-5 shrink-0" />
                 <span className="font-mono-tech text-[10px] uppercase tracking-wider">
                   {photos.length === 0 ? "Agregar fotos (hasta 4)" : "Agregar más"}
                 </span>
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoAdd} />
-              </label>
+              </button>
             )}
             {photos.length > 0 && (
               <p className="mt-2 font-mono-tech text-[9px] uppercase tracking-[0.15em] text-slate-600">
@@ -4386,12 +4401,19 @@ function ToolsPage() {
             </div>
           </div>
 
-          {/* Exportar */}
-          <button type="button" onClick={handleExport} disabled={exporting || !canExport}
-            className="flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40">
-            <Download className="h-4 w-4" />
-            {exporting ? "Generando imagen..." : "Descargar imagen ▸"}
-          </button>
+          {/* Exportar + Compartir */}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={handleExport} disabled={exporting || !canExport}
+              className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40">
+              <Download className="h-4 w-4" />
+              {exporting ? "Generando imagen..." : "Descargar imagen ▸"}
+            </button>
+            <button type="button" onClick={handleShare} disabled={!canExport}
+              className="flex items-center justify-center gap-2 rounded-sm border border-[var(--eva-green)]/40 bg-transparent px-6 py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-[var(--eva-green)] transition hover:bg-[var(--eva-green)]/10 disabled:cursor-not-allowed disabled:opacity-40">
+              <Share2 className="h-4 w-4" />
+              Compartir texto
+            </button>
+          </div>
         </div>
 
         {/* ── PREVIEW ── */}
