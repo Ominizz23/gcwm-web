@@ -35,8 +35,9 @@ import { tutorials } from "./data/tutorials";
 import { products as shopItems } from "./data/products";
 import { professionals } from "./data/professionals";
 import { characters } from "./data/characters";
-import { postJson, exitApp, share, haptic, pickPhotos } from "./native.js";
+import { postJson, exitApp, share, haptic, pickPhotos, isNative } from "./native.js";
 import { useAndroidBackButton } from "./use-android-back.js";
+import MobileShell from "./mobile/MobileShell.jsx";
 
 // ───────────────────────────────────────────────────────
 // Configuración del negocio
@@ -4493,7 +4494,7 @@ function getStateFromHash() {
     };
   }
   return {
-    page: ["home", "shop", "professionals", "community", "tools"].includes(h) ? h : "home",
+    page: ["home", "shop", "professionals", "community", "tools", "more"].includes(h) ? h : "home",
     category: "pelucas",
   };
 }
@@ -4682,6 +4683,8 @@ export default function GCWMHomepageMockup() {
   const [cartOpen, setCartOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [buildOpen, setBuildOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
 
   // Carrito persistente: lee de localStorage al iniciar
   const [cart, setCart] = useState(() => {
@@ -4750,12 +4753,47 @@ export default function GCWMHomepageMockup() {
   // Back button de Android: cierra modal → vuelve a home → sale de la app.
   // Es no-op en web.
   useAndroidBackButton(() => {
+    if (faqOpen) return setFaqOpen(false);
+    if (contactOpen) return setContactOpen(false);
     if (buildOpen) return setBuildOpen(false);
     if (searchOpen) return setSearchOpen(false);
     if (cartOpen) return setCartOpen(false);
+    if (page === "category" || page === "community" || page === "tools") return changePage("more");
     if (page !== "home") return changePage("home");
     exitApp();
   });
+
+  // En Android nativo usamos el shell mobile (top app bar + bottom tab + safe areas).
+  // En web seguimos con el shell desktop/responsive de siempre.
+  if (isNative()) {
+    return (
+      <MobileShell
+        page={page}
+        setPage={changePage}
+        activeCategoryId={activeCategory}
+        openCategory={openCategory}
+        cartCount={cartCount}
+        onOpenCart={() => setCartOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
+        onOpenBuild={() => setBuildOpen(true)}
+        onOpenContact={() => setContactOpen(true)}
+        onOpenFAQ={() => setFaqOpen(true)}
+      >
+        {page === "home" && <HomePage setPage={changePage} openCategory={openCategory} />}
+        {page === "shop" && <ShopPage cart={cart} setCart={setCart} wishlist={wishlist} toggleWishlist={toggleWishlist} />}
+        {page === "professionals" && <ProfessionalsPage />}
+        {page === "category" && <CategoryPage activeCategoryId={activeCategory} setPage={changePage} openCategory={openCategory} />}
+        {page === "community" && <CommunityPage />}
+        {page === "tools" && <ToolsPage />}
+        <SubscriptionModal />
+        {cartOpen && <CartModal cart={cart} setCart={setCart} onClose={() => setCartOpen(false)} wishlist={wishlist} toggleWishlist={toggleWishlist} />}
+        {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} setPage={changePage} openCategory={openCategory} />}
+        {buildOpen && <BuildWizard onClose={() => setBuildOpen(false)} setPage={changePage} openCategory={openCategory} />}
+        {contactOpen && <ContactModal onClose={() => setContactOpen(false)} />}
+        {faqOpen && <FAQModal onClose={() => setFaqOpen(false)} />}
+      </MobileShell>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[var(--eva-black)] text-white">
