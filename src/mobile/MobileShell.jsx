@@ -15,18 +15,18 @@ function deriveNav(page, activeCategoryId) {
       return { tab: "home", title: "GCWM", showBack: false };
     case "shop":
       return { tab: "shop", title: "Catálogo", showBack: false };
-    case "professionals":
-      return { tab: "professionals", title: "Profesionales", showBack: false };
+    case "tools":
+      return { tab: "tools", title: "Herramientas", showBack: false };
     case "more":
       return { tab: "more", title: "Más", showBack: false };
     case "category": {
       const cat = getCategory(activeCategoryId);
       return { tab: "more", title: cat?.label || "Categoría", showBack: true };
     }
+    case "professionals":
+      return { tab: "more", title: "Profesionales", showBack: true };
     case "community":
       return { tab: "more", title: "Comunidad", showBack: true };
-    case "tools":
-      return { tab: "more", title: "Herramientas", showBack: true };
     default:
       return { tab: "home", title: "GCWM", showBack: false };
   }
@@ -56,7 +56,11 @@ export default function MobileShell({
 
   function handleBack() {
     // Volver al tab principal que corresponde a la sección actual.
-    if (page === "category" || page === "community" || page === "tools") {
+    if (
+      page === "category" ||
+      page === "community" ||
+      page === "professionals"
+    ) {
       setPage("more");
     } else {
       setPage("home");

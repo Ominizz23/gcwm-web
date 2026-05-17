@@ -38,6 +38,8 @@ import { characters } from "./data/characters";
 import { postJson, exitApp, share, haptic, pickPhotos, isNative } from "./native.js";
 import { useAndroidBackButton } from "./use-android-back.js";
 import MobileShell from "./mobile/MobileShell.jsx";
+import MobileSheet from "./mobile/MobileSheet.jsx";
+import BottomSheet from "./mobile/BottomSheet.jsx";
 
 // ───────────────────────────────────────────────────────
 // Configuración del negocio
@@ -181,42 +183,8 @@ function SubscriptionModal() {
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop (no cierra al click — solo bloquea el contenido detrás) */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-black/85"
-      />
-
-      {/* Modal */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-md overflow-hidden rounded-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80"
-      >
-        {/* Esquinas HUD */}
-        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
-
-        {/* Botón cerrar */}
-        <button
-          type="button"
-          onClick={() => closeAndRemember("dismissed")}
-          className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-white/30 hover:text-white"
-          aria-label="Cerrar modal"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
-        <div className="relative p-4 md:p-8">
-          {/* Grid HUD de fondo */}
-          <div className="absolute inset-0 eva-grid-bg opacity-30" />
-
-          <div className="relative">
+  const formContent = (
+          <>
             {status === "success" ? (
               // ESTADO: ÉXITO
               <div className="py-6 text-center">
@@ -327,7 +295,45 @@ function SubscriptionModal() {
                 </form>
               </>
             )}
-          </div>
+    </>
+  );
+
+  // En native usamos un BottomSheet que slidea desde abajo (más nativo)
+  if (isNative()) {
+    return (
+      <BottomSheet title="pilot_signup" onClose={() => closeAndRemember("dismissed")}>
+        {formContent}
+      </BottomSheet>
+    );
+  }
+
+  // Web: modal centrado clásico
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div aria-hidden="true" className="absolute inset-0 bg-black/85" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-md overflow-hidden rounded-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80"
+      >
+        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+
+        <button
+          type="button"
+          onClick={() => closeAndRemember("dismissed")}
+          className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-white/30 hover:text-white"
+          aria-label="Cerrar modal"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
+        <div className="relative p-4 md:p-8">
+          <div className="absolute inset-0 eva-grid-bg opacity-30" />
+          <div className="relative">{formContent}</div>
         </div>
       </motion.div>
     </div>
@@ -2586,45 +2592,9 @@ function CartModal({ cart, setCart, onClose, wishlist, toggleWishlist }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-black/85"
-        onClick={onClose}
-      />
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="relative flex w-full max-w-md max-h-[90vh] flex-col overflow-hidden rounded-t-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80 sm:rounded-sm"
-      >
-        {/* Esquinas HUD */}
-        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
-          <div>
-            <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ pedido_activo</p>
-            <h2 className="mt-0.5 font-display text-2xl text-white">
-              Carrito{itemCount > 0 && <span className="ml-2 text-[var(--eva-green)]">({itemCount})</span>}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-9 w-9 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-white/30 hover:text-white"
-            aria-label="Cerrar carrito"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Contenido scrollable */}
-        <div className="flex-1 overflow-y-auto">
+  // Contenido scrollable — reusado tanto en web modal como en MobileSheet nativo
+  const scrollContent = (
+    <>
           <div className="p-5">
             {cartLines.length === 0 ? (
               <div className="rounded-sm border border-dashed border-white/10 bg-black/40 p-8 text-center">
@@ -2753,64 +2723,117 @@ function CartModal({ cart, setCart, onClose, wishlist, toggleWishlist }) {
               </div>
             </div>
           )}
+    </>
+  );
+
+  const footerContent = cartLines.length > 0 ? (
+    <div className="p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">
+          total estimado
+        </span>
+        <span className="font-display text-2xl text-[var(--eva-green)] eva-glow-green">
+          {formatPrice(total)}
+        </span>
+      </div>
+
+      {confirming ? (
+        <div className="overflow-hidden rounded-sm border border-[var(--eva-orange)]/40 bg-[var(--eva-orange)]/5">
+          <div className="border-b border-[var(--eva-orange)]/20 px-4 py-3">
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-orange)]">
+              ▸ confirmar pedido
+            </p>
+            <p className="mt-1 text-sm leading-5 text-slate-300">
+              Se abrirá WhatsApp con tu pedido de{" "}
+              <span className="font-bold text-[var(--eva-green)]">{formatPrice(total)}</span>.
+              Coordinamos stock, pago y envío.
+            </p>
+          </div>
+          <div className="flex gap-2 p-3">
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="flex-1 rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
+            >
+              ← Volver
+            </button>
+            <a
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={onClose}
+              className="flex flex-[1.5] items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_20px_var(--eva-green-glow)] transition hover:bg-white"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              Sí, confirmar ▸
+            </a>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] px-4 py-4 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_30px_var(--eva-green-glow)] transition hover:bg-white"
+        >
+          <ShoppingBag className="h-4 w-4" />
+          Realizar pedido ▸
+        </button>
+      )}
+    </div>
+  ) : null;
+
+  // En native: full-screen MobileSheet con footer sticky
+  if (isNative()) {
+    return (
+      <MobileSheet
+        title={`Carrito${itemCount > 0 ? ` (${itemCount})` : ""}`}
+        onClose={onClose}
+        closeIcon="x"
+        footer={footerContent}
+      >
+        {scrollContent}
+      </MobileSheet>
+    );
+  }
+
+  // Web: modal centrado con backdrop (como siempre)
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/85"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+        className="relative flex w-full max-w-md max-h-[90vh] flex-col overflow-hidden rounded-t-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80 sm:rounded-sm"
+      >
+        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-4">
+          <div>
+            <p className="font-mono-tech text-[10px] uppercase tracking-[0.3em] text-[var(--eva-green)]">▸ pedido_activo</p>
+            <h2 className="mt-0.5 font-display text-2xl text-white">
+              Carrito{itemCount > 0 && <span className="ml-2 text-[var(--eva-green)]">({itemCount})</span>}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-9 w-9 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:border-white/30 hover:text-white"
+            aria-label="Cerrar carrito"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        {/* Footer del modal */}
-        {cartLines.length > 0 && (
-          <div className="border-t border-white/10 p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="font-mono-tech text-[10px] uppercase tracking-[0.25em] text-slate-400">
-                total estimado
-              </span>
-              <span className="font-display text-2xl text-[var(--eva-green)] eva-glow-green">
-                {formatPrice(total)}
-              </span>
-            </div>
-
-            {confirming ? (
-              <div className="overflow-hidden rounded-sm border border-[var(--eva-orange)]/40 bg-[var(--eva-orange)]/5">
-                <div className="border-b border-[var(--eva-orange)]/20 px-4 py-3">
-                  <p className="font-mono-tech text-[10px] uppercase tracking-[0.2em] text-[var(--eva-orange)]">
-                    ▸ confirmar pedido
-                  </p>
-                  <p className="mt-1 text-sm leading-5 text-slate-300">
-                    Se abrirá WhatsApp con tu pedido de{" "}
-                    <span className="font-bold text-[var(--eva-green)]">{formatPrice(total)}</span>.
-                    Coordinamos stock, pago y envío.
-                  </p>
-                </div>
-                <div className="flex gap-2 p-3">
-                  <button
-                    type="button"
-                    onClick={() => setConfirming(false)}
-                    className="flex-1 rounded-sm border border-white/10 bg-black/40 py-3 font-mono-tech text-xs uppercase tracking-wider text-slate-400 transition hover:bg-black/60"
-                  >
-                    ← Volver
-                  </button>
-                  <a
-                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${whatsappMessage}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={onClose}
-                    className="flex flex-[1.5] items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] py-3 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_20px_var(--eva-green-glow)] transition hover:bg-white"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    Sí, confirmar ▸
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirming(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--eva-green)] px-4 py-4 font-mono-tech text-xs font-bold uppercase tracking-[0.2em] text-black shadow-[0_0_30px_var(--eva-green-glow)] transition hover:bg-white"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Realizar pedido ▸
-              </button>
-            )}
-          </div>
-        )}
+        <div className="flex-1 overflow-y-auto">{scrollContent}</div>
+        {footerContent && <div className="border-t border-white/10">{footerContent}</div>}
       </motion.div>
     </div>
   );
@@ -3064,47 +3087,22 @@ function SearchModal({ onClose, setPage, openCategory }) {
     onClose();
   }
 
-  return (
-    <div className="fixed inset-0 z-[150] flex items-start justify-center pt-20 p-4">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-black/85"
-        onClick={onClose}
+  const searchInput = (
+    <div className="flex items-center gap-3 border-b border-white/10 px-5 py-3">
+      <Search className="h-4 w-4 shrink-0 text-[var(--eva-green)]" />
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Buscar productos, tutoriales..."
+        className="min-w-0 flex-1 bg-transparent font-mono-tech text-sm text-white outline-none placeholder:text-slate-500"
       />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: -16 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-2xl overflow-hidden rounded-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80"
-      >
-        {/* Esquinas HUD */}
-        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
-        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+    </div>
+  );
 
-        {/* Input */}
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
-          <Search className="h-4 w-4 shrink-0 text-[var(--eva-green)]" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar productos, tutoriales, profesionales..."
-            className="min-w-0 flex-1 bg-transparent font-mono-tech text-sm text-white outline-none placeholder:text-slate-500"
-          />
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:text-white"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-
-        {/* Resultados */}
-        <div className="max-h-[60vh] overflow-y-auto p-3">
+  const resultsContent = (
+    <div className="p-3">
           {!query.trim() ? (
             <div>
               <p className="mb-3 px-2 font-mono-tech text-[10px] uppercase tracking-[0.3em] text-slate-500">▸ acceso rápido</p>
@@ -3215,7 +3213,49 @@ function SearchModal({ onClose, setPage, openCategory }) {
               )}
             </div>
           )}
+    </div>
+  );
+
+  if (isNative()) {
+    return (
+      <MobileSheet title="Búsqueda" onClose={onClose} closeIcon="x">
+        {searchInput}
+        {resultsContent}
+      </MobileSheet>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-start justify-center pt-20 p-4">
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/85"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: -16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-2xl overflow-hidden rounded-sm border border-[var(--eva-green)]/30 bg-gradient-to-b from-[var(--eva-charcoal)] to-black shadow-2xl shadow-black/80"
+      >
+        <div className="pointer-events-none absolute left-0 top-0 h-6 w-6 border-l-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-6 w-6 border-r-2 border-t-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-[var(--eva-green)]" />
+        <div className="pointer-events-none absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-[var(--eva-green)]" />
+
+        <div className="flex items-center justify-between pr-3">
+          <div className="flex-1">{searchInput}</div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-2 grid h-7 w-7 shrink-0 place-items-center rounded-sm border border-white/10 bg-black/60 text-slate-400 transition hover:text-white"
+            aria-label="Cerrar"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
+
+        <div className="max-h-[60vh] overflow-y-auto">{resultsContent}</div>
       </motion.div>
     </div>
   );
@@ -4758,7 +4798,7 @@ export default function GCWMHomepageMockup() {
     if (buildOpen) return setBuildOpen(false);
     if (searchOpen) return setSearchOpen(false);
     if (cartOpen) return setCartOpen(false);
-    if (page === "category" || page === "community" || page === "tools") return changePage("more");
+    if (page === "category" || page === "community" || page === "professionals") return changePage("more");
     if (page !== "home") return changePage("home");
     exitApp();
   });
